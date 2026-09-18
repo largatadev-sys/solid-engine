@@ -2,8 +2,8 @@ package com.largata.trip.plan.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.common.tx.AfterCommit;
@@ -50,7 +50,6 @@ public class ActivityService {
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
-    private final WriteFence fence;
     private final Analytics analytics;
     private final PhotoService photos;
 
@@ -61,7 +60,6 @@ public class ActivityService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
-            WriteFence fence,
             Analytics analytics,
             PhotoService photos) {
         this.days = days;
@@ -70,16 +68,15 @@ public class ActivityService {
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
-        this.fence = fence;
         this.analytics = analytics;
         this.photos = photos;
     }
 
 
     @Transactional
-    public ActivityView create(Membership member, UUID dayId, ActivityFields fields) {
-        fence.requireEditable(member);
-        editLease.requireNoForeignSession(member);
+    public ActivityView create(TripFence.Editable<?> editable, UUID dayId, ActivityFields fields) {
+        Membership member = editable.member();
+        editLease.requireNoForeignSession(editable);
         requireDay(member.itineraryId(), dayId);
         if (activities.countByDayId(dayId) >= MAX_ACTIVITIES_PER_DAY) {
             throw new PlanLimitExceededException("A day holds at most " + MAX_ACTIVITIES_PER_DAY + " activities");
@@ -104,10 +101,12 @@ public class ActivityService {
 
 
     @Transactional
-    public ActivityView edit(Membership member, UUID dayId, UUID activityId, ActivityFields fields) {
+    public ActivityView edit(
+            TripFence.Editable<?> editable, UUID dayId, UUID activityId, ActivityFields fields) {
+        Membership member = editable.member();
         requireDay(member.itineraryId(), dayId);
         Activity activity = requireActivity(dayId, activityId);
-        editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
+        editLease.requireHeldBy(editable, LeaseSubject.activity(activityId));
         activity.edit(pricedInTripCurrency(member.itineraryId(), fields), member.travelerId(), Instant.now());
         activities.save(activity);
         history.record(member, HistoryAct.ACTIVITY_EDITED, LeaseSubject.activity(activityId));
@@ -133,10 +132,11 @@ public class ActivityService {
 
 
     @Transactional
-    public void delete(Membership member, UUID dayId, UUID activityId) {
+    public void delete(TripFence.Editable<?> editable, UUID dayId, UUID activityId) {
+        Membership member = editable.member();
         requireDay(member.itineraryId(), dayId);
         Activity activity = requireActivity(dayId, activityId);
-        editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
+        editLease.requireHeldBy(editable, LeaseSubject.activity(activityId));
         activities.delete(activity);
         editLease.releaseSubjects(LeaseSubjectType.ACTIVITY, List.of(activityId));
         history.record(member, HistoryAct.ACTIVITY_DELETED, LeaseSubject.activity(activityId));
@@ -148,9 +148,12 @@ public class ActivityService {
 
     @Transactional
     public DayView reorder(
-            Membership member, UUID dayId, List<UUID> expectedActivityIds, List<UUID> orderedActivityIds) {
-        fence.requireEditable(member);
-        editLease.requireNoForeignSession(member);
+            TripFence.Editable<?> editable,
+            UUID dayId,
+            List<UUID> expectedActivityIds,
+            List<UUID> orderedActivityIds) {
+        Membership member = editable.member();
+        editLease.requireNoForeignSession(editable);
         Day day = requireDay(member.itineraryId(), dayId);
         List<Activity> current = activities.findByDayIdOrderBySortOrderAscIdAsc(dayId);
         List<UUID> currentOrder = current.stream().map(Activity::id).toList();
@@ -184,11 +187,13 @@ public class ActivityService {
 
 
     @Transactional
-    public ActivityView move(Membership member, UUID dayId, UUID activityId, UUID targetDayId) {
+    public ActivityView move(
+            TripFence.Editable<?> editable, UUID dayId, UUID activityId, UUID targetDayId) {
+        Membership member = editable.member();
         requireDay(member.itineraryId(), dayId);
         requireDay(member.itineraryId(), targetDayId);
         Activity activity = requireActivity(dayId, activityId);
-        editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
+        editLease.requireHeldBy(editable, LeaseSubject.activity(activityId));
         if (activities.countByDayId(targetDayId) >= MAX_ACTIVITIES_PER_DAY) {
             throw new PlanLimitExceededException("A day holds at most " + MAX_ACTIVITIES_PER_DAY + " activities");
         }

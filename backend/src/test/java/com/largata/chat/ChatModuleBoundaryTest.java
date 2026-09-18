@@ -27,6 +27,8 @@ class ChatModuleBoundaryTest {
                     .and(not(resideInAPackage(CHAT + "..")))
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
+                    .and(not(resideInAPackage("com.largata.trip.api..")))
+                    .and(not(resideInAPackage("com.largata.trip.exception..")))
                     .and(not(resideInAPackage("com.largata.ws..")));
 
     private final JavaClasses largata =
@@ -57,8 +59,12 @@ class ChatModuleBoundaryTest {
                 .resideInAPackage(CHAT + "..")
                 .should()
                 .dependOnClassesThat(A_MODULE_IT_MAY_NOT_NAME)
-                .as("chat carries a workspace conversation and fans it out over the transport — stated as an ALLOWLIST (common, identity, ws), so a module"
-                        + " invented tomorrow is forbidden the day it is created")
+                .as("chat carries a workspace conversation and fans it out over the transport —"
+                        + " stated as an ALLOWLIST (common, identity, the trip module's front door,"
+                        + " ws), so a module invented tomorrow is forbidden the day it is created."
+                        + " TW-2 made the trip reach EXPLICIT: chat always depended on the trip's"
+                        + " authorization model, and while that model sat in common.authz the blanket"
+                        + " common allowance hid the edge from this very rule")
                 .check(largata);
     }
 

@@ -7,7 +7,6 @@ import { confirmWith } from '../../../../../src/components/confirmDestructive';
 import { unpublishTripWording } from '../../../../../src/components/confirmDestructiveMessage';
 import { notify } from '../../../../../src/components/notify';
 import { useMe } from '../../../../../src/hooks/useMe';
-import { canEditPlan } from '../../../../../src/itineraries/archiveControls';
 import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
 import {
   canPublish,
@@ -19,7 +18,6 @@ import {
   type TransitionConfirmation,
 } from '../../../../../src/itineraries/TransitionDrawer';
 import { attributionLabel, attributionLinks } from '../../../../../src/itineraries/forkCopy';
-import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
 import { WorkspaceSettingsMenu } from '../../../../../src/itineraries/WorkspaceSettingsMenu';
@@ -92,7 +90,7 @@ export default function TripWorkspaceScreen() {
     return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this trip')} />;
   }
 
-  if (data.published && !data.archived) {
+  if (data.published) {
     return (
       <Redirect href={{ pathname: '/published/[id]', params: { id: data.itineraryId ?? id } }} />
     );
@@ -104,7 +102,7 @@ export default function TripWorkspaceScreen() {
 
   const badge = stateBadge(data);
   const ladder = ladderCta(data, isOwner, myId);
-  const editAction = editItineraryAction(data, canEditPlan(data), myId);
+  const editAction = editItineraryAction(data, myId);
   const affordances = workspaceAffordances('viewer', isOwner);
 
   const openEditor = () => {
@@ -188,8 +186,6 @@ export default function TripWorkspaceScreen() {
           onSelect={chooseSetting}
         />
 
-        <TripArchiveBanner itinerary={data} />
-
         <WorkspaceTabRow active={active} onSelect={setActive} />
 
         {active === 'day-by-day' ? (
@@ -208,7 +204,6 @@ export default function TripWorkspaceScreen() {
                   diaryLinkFor={(activity) => {
                     if (!capturing) return null;
                     const mine = entryForActivity(myEntries.data ?? [], activity.id);
-                    if (mine === null && (data.archived ?? false)) return null;
                     return {
                       label: captureLabel(mine),
                       added: mine !== null,
@@ -235,7 +230,6 @@ export default function TripWorkspaceScreen() {
           <WorkspacePollsTab
             itineraryId={id}
             isOwner={isOwner}
-            archived={data.archived ?? false}
           />
         ) : null}
 
@@ -245,13 +239,12 @@ export default function TripWorkspaceScreen() {
             tripTitle={data.title}
             myId={myId}
             published={data.published}
-            archived={data.archived ?? false}
           />
         ) : null}
 
         {active === 'chat' ? (
           <View style={styles.chatBody}>
-            <WorkspaceChatTab itineraryId={id} myId={myId} archived={data.archived ?? false} />
+            <WorkspaceChatTab itineraryId={id} myId={myId} />
           </View>
         ) : null}
 
@@ -260,7 +253,6 @@ export default function TripWorkspaceScreen() {
             itineraryId={id}
             myId={myId}
             isOwner={isOwner}
-            archived={data.archived ?? false}
           />
         ) : null}
 

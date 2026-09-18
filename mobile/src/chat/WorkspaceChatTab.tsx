@@ -18,7 +18,6 @@ import { FailedSendRow } from './FailedSendRow';
 import { MessageBubble } from './MessageBubble';
 import { MessageEntrance } from './MessageEntrance';
 import {
-  ArchivedNotice,
   ChatEmptyState,
   DateSeparator,
   GapTimestamp,
@@ -44,14 +43,13 @@ const NEAR_BOTTOM_SLACK_PX = 48;
 interface WorkspaceChatTabProps {
   readonly itineraryId: string;
   readonly myId: string | undefined;
-  readonly archived: boolean;
 }
 
 
-export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatTabProps) {
+export function WorkspaceChatTab({ itineraryId, myId }: WorkspaceChatTabProps) {
   const thread = useChatThread(itineraryId, true);
   const send = useSendChatMessage(itineraryId);
-  useChatDelivery(itineraryId, !archived);
+  useChatDelivery(itineraryId);
 
   const [draft, setDraft] = useState(() => readDraft(itineraryId));
   const [pending, setPending] = useState<PendingSends>([]);
@@ -80,14 +78,6 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
   );
 
   const rows = useMemo(() => threadRows(messages, new Date()), [messages]);
-
-  useEffect(() => {
-    if (archived) {
-      clearDraft(itineraryId);
-      setDraft('');
-      setPending([]);
-    }
-  }, [archived, itineraryId]);
 
   const newest = messages[messages.length - 1]?.id;
   const lastSeen = useRef(newest);
@@ -218,23 +208,19 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
         </ScrollView>
       )}
 
-      {archived ? (
-        <ArchivedNotice />
-      ) : (
-        <View>
-          {unseen ? (
-            <View style={styles.pillDock}>
-              <NewMessagesPill onPress={jumpToNewest} />
-            </View>
-          ) : null}
-          <Composer
-            draft={draft}
-            onDraftChange={onDraftChange}
-            onSend={onSend}
-            autoFocus={messages.length === 0}
-          />
-        </View>
-      )}
+      <View>
+        {unseen ? (
+          <View style={styles.pillDock}>
+            <NewMessagesPill onPress={jumpToNewest} />
+          </View>
+        ) : null}
+        <Composer
+          draft={draft}
+          onDraftChange={onDraftChange}
+          onSend={onSend}
+          autoFocus={messages.length === 0}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }

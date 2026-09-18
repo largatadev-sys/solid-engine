@@ -161,20 +161,15 @@ test.describe('the create bar and the archived link (canvas C4, C6)', () => {
     await expect(labelled(page, CREATE_BAR)).toHaveCount(0);
   });
 
-  test('the Archived trips link sits on Completed alone and routes to the archived list', async ({
+  test('no tab offers an Archived trips link — TW-2 made archive the implementation of Delete', async ({
     page,
   }) => {
     await page.goto('/trips');
 
-    await tabNamed(page, 'upcoming').click();
-    await expect(labelled(page, ARCHIVED_LINK)).toHaveCount(0);
-
-    await tabNamed(page, 'completed').click();
-    await expect(labelled(page, ARCHIVED_LINK)).toBeVisible();
-
-    await labelled(page, ARCHIVED_LINK).click();
-    await expect(page).toHaveURL(/itineraries\/archived/);
-    await expect(page.getByText('Archived Trips', { exact: true })).toBeVisible();
+    for (const tab of ['upcoming', 'ongoing', 'completed'] as const) {
+      await tabNamed(page, tab).click();
+      await expect(labelled(page, ARCHIVED_LINK)).toHaveCount(0);
+    }
   });
 
   test('an archived trip never appears inside the three tabs', async ({ page }) => {

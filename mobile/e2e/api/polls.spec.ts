@@ -261,7 +261,7 @@ test('a departing member takes their votes with them, and the denominator drops'
 });
 
 
-test('an archived trip freezes poll writes for the owner and hides the board from a member', async () => {
+test('a DELETED trip hides its poll board from everybody, the owner included (ADR-040)', async () => {
   const archivable = await api('/v1/trips', 'POST', owner, {
     title: stamp('Polls archived'),
     destination: 'Coron',
@@ -278,16 +278,16 @@ test('an archived trip freezes poll writes for the owner and hides the board fro
   await api(`/v1/trips/${archivedTrip}/archive`, 'POST', owner, {});
 
   const ownerReads = await api(`/v1/trips/${archivedTrip}/polls`, 'GET', owner);
-  expect(ownerReads.status).toBe(200);
-  expect(ownerReads.body.active).toHaveLength(1);
+  expect(ownerReads.status).toBe(404);
+  expect(ownerReads.body?.code).toBe('ITINERARY_NOT_FOUND');
 
   const ownerWrites = await api(`/v1/trips/${archivedTrip}/polls`, 'POST', owner, {
     question: 'After',
     options: ['A', 'B'],
     closesAt: inADay(),
   });
-  expect(ownerWrites.status).toBe(409);
-  expect(ownerWrites.body?.code).toBe('TRIP_ARCHIVED');
+  expect(ownerWrites.status).toBe(404);
+  expect(ownerWrites.body?.code).toBe('ITINERARY_NOT_FOUND');
 
   const strangerReads = await api(`/v1/trips/${archivedTrip}/polls`, 'GET', member);
   expect(strangerReads.status).toBe(404);

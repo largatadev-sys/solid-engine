@@ -162,11 +162,11 @@ class PlanSaveIT extends PostgresTestBase {
                                 archivedBase,
                                 planWithOneDayTitled(archivedBase, archivedDay, "Into an archived trip"))
                         .expectStatus()
-                        .isEqualTo(409)
+                        .isNotFound()
                         .expectBody()
                         .returnResult()
                         .getResponseBodyContent();
-        assertThat(TripRig.fieldIn(archivedRefusal, "code")).isEqualTo("TRIP_ARCHIVED");
+        assertThat(TripRig.fieldIn(archivedRefusal, "code")).isEqualTo("ITINERARY_NOT_FOUND");
 
         String publishedOwner = rig.travelerWithHandle("owner" + suffix());
         String published = rig.createTrip(publishedOwner, 1);

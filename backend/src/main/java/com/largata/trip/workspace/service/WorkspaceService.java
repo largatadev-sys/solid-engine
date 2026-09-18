@@ -1,6 +1,6 @@
 package com.largata.trip.workspace.service;
 
-import com.largata.common.authz.Role;
+import com.largata.trip.api.Role;
 import com.largata.trip.api.MembershipApi;
 import com.largata.trip.api.MembershipArrived;
 import com.largata.trip.api.MembershipView;
@@ -77,18 +77,6 @@ public class WorkspaceService implements MembershipApi {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void markCompleted(UUID itineraryId) {
-        workspaces.findByItineraryId(itineraryId).ifPresent(Workspace::markCompleted);
-    }
-
-
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void markActive(UUID itineraryId) {
-        workspaces.findByItineraryId(itineraryId).ifPresent(Workspace::markActive);
-    }
-
-
-    @Transactional(propagation = Propagation.MANDATORY)
     public void archive(UUID itineraryId) {
         workspaceFor(itineraryId).archive();
         log.info("Workspace archived: itineraryId={}", itineraryId);
@@ -96,9 +84,9 @@ public class WorkspaceService implements MembershipApi {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void unarchive(UUID itineraryId, boolean itineraryIsCompleted) {
-        workspaceFor(itineraryId).unarchive(itineraryIsCompleted);
-        log.info("Workspace unarchived: itineraryId={} completed={}", itineraryId, itineraryIsCompleted);
+    public void unarchive(UUID itineraryId) {
+        workspaceFor(itineraryId).unarchive();
+        log.info("Workspace unarchived: itineraryId={}", itineraryId);
     }
 
 
@@ -209,7 +197,7 @@ public class WorkspaceService implements MembershipApi {
 
     @Transactional(readOnly = true)
     public List<UUID> tripIdsInSightOf(UUID travelerId) {
-        return memberships.findItineraryIdsInSightOf(travelerId, WorkspaceState.ARCHIVED);
+        return memberships.findItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
     }
 
 

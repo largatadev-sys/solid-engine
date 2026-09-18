@@ -2,10 +2,10 @@ package com.largata.itinerary.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.ItineraryNotFoundException;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.TripEditingSession;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.exception.ItineraryNotFoundException;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.api.ItineraryApi;
 import com.largata.itinerary.entity.ItineraryObject;
@@ -40,8 +40,6 @@ public class ItineraryObjectService implements ItineraryApi {
     private final ItineraryObjectRepository objects;
     private final PlanApi plans;
     private final MembershipApi workspaces;
-    private final TripEditingSession editingSession;
-    private final WriteFence fence;
     private final ObjectMapper json;
     private final Analytics analytics;
     private final Clock clock;
@@ -50,16 +48,12 @@ public class ItineraryObjectService implements ItineraryApi {
             ItineraryObjectRepository objects,
             PlanApi plans,
             MembershipApi workspaces,
-            TripEditingSession editingSession,
-            WriteFence fence,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
         this.objects = objects;
         this.plans = plans;
         this.workspaces = workspaces;
-        this.editingSession = editingSession;
-        this.fence = fence;
         this.json = json;
         this.analytics = analytics;
         this.clock = clock;
@@ -67,17 +61,14 @@ public class ItineraryObjectService implements ItineraryApi {
 
 
     @Transactional
-    public ItineraryObject publish(Membership member) {
-        fence.requireWritable(member);
-        if (!member.isOwner()) {
-            throw new NotTheTripOwnerException("Only the trip owner can publish this trip.");
-        }
+    public ItineraryObject publish(TripFence.Writable<Owner> writable) {
+        Membership member = writable.member();
         TripPlan plan = plans.planOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
         if (!plan.lifecycle().admitsPublishing()) {
             throw new TripNotCompleteException(plan.lifecycle());
         }
 
-        editingSession.heldByAnotherTraveler(member).ifPresent(holder -> {
+        plans.planHeldByAnotherTraveler(member).ifPresent(holder -> {
             throw new TripBeingEditedException(holder);
         });
 
@@ -102,21 +93,16 @@ public class ItineraryObjectService implements ItineraryApi {
 
 
     @Transactional(readOnly = true)
-    public String snapshotOfLivePlan(Membership owner) {
-        if (!owner.isOwner()) {
-            throw new NotTheTripOwnerException("Only the trip owner can preview the published page.");
-        }
+    public String snapshotOfLivePlan(TripFence.InAudience<Owner> audience) {
+        Membership owner = audience.member();
         TripPlan plan = plans.planOf(owner.itineraryId()).orElseThrow(TripNotFoundException::new);
         return json.writeValueAsString(PlanSnapshot.of(plan));
     }
 
 
     @Transactional
-    public void unpublish(Membership member) {
-        fence.requireWritable(member);
-        if (!member.isOwner()) {
-            throw new NotTheTripOwnerException("Only the trip owner can unpublish this trip.");
-        }
+    public void unpublish(TripFence.Writable<Owner> writable) {
+        Membership member = writable.member();
         Optional<ItineraryObject> live =
                 objects.findByTripId(member.itineraryId())
                         .filter(candidate -> !candidate.isRetired());
@@ -160,22 +146,21 @@ public class ItineraryObjectService implements ItineraryApi {
 
     @Transactional(readOnly = true)
     public ItineraryObject readFor(UUID readerId, UUID objectId) {
-        return admitted(readerId, read(objectId));
+        return admitted(read(objectId));
     }
 
 
     @Transactional(readOnly = true)
     public ItineraryObject liveOfTripFor(UUID readerId, UUID tripId) {
         return admitted(
-                readerId,
                 objects.findByTripId(tripId)
                         .filter(candidate -> !candidate.isRetired())
                         .orElseThrow(ItineraryNotFoundException::new));
     }
 
 
-    private ItineraryObject admitted(UUID readerId, ItineraryObject object) {
-        if (workspaces.isArchived(object.tripId()) && !object.isOwnedBy(readerId)) {
+    private ItineraryObject admitted(ItineraryObject object) {
+        if (workspaces.isArchived(object.tripId())) {
             throw new ItineraryObjectNotFoundException();
         }
         return object;

@@ -3,9 +3,10 @@ package com.largata.poll;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.largata.common.authz.AudienceFence;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.support.Proofs;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.api.Role;
 import com.largata.poll.exception.PollExceptions;
 import com.largata.poll.service.PollBoard;
 import com.largata.poll.service.PollOptionView;
@@ -39,10 +40,10 @@ class PollLazyCloseIT extends PostgresTestBase {
     private static final Duration AN_HOUR = Duration.ofHours(1);
 
     @Autowired private PollService polls;
+    @Autowired private TripFence fence;
     @Autowired private MutableClock clock;
     @Autowired private TripService itineraries;
     @Autowired private WorkspaceService workspaces;
-    @Autowired private AudienceFence audience;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TransactionTemplate transactions;
 
@@ -50,7 +51,7 @@ class PollLazyCloseIT extends PostgresTestBase {
     void aPollPastItsDeadlineReadsClosedWithoutAnyWriteEverHavingHappened() {
         Membership owner = ownerOfAFreshTrip();
         PollView asked = ask(owner, "Dinner?", List.of("Ramen", "Tacos"));
-        polls.vote(owner, asked.id(), asked.options().getFirst().id());
+        polls.vote(writable(owner), asked.id(), asked.options().getFirst().id());
         assertThat(onlyPollOf(owner).closed()).isFalse();
 
         clock.advance(AN_HOUR.plusSeconds(1));
@@ -71,7 +72,7 @@ class PollLazyCloseIT extends PostgresTestBase {
     void aPollStillInsideItsDeadlineStaysOpenAndStarsNoWinnerYet() {
         Membership owner = ownerOfAFreshTrip();
         PollView asked = ask(owner, "Dinner?", List.of("Ramen", "Tacos"));
-        polls.vote(owner, asked.id(), asked.options().getFirst().id());
+        polls.vote(writable(owner), asked.id(), asked.options().getFirst().id());
 
         clock.advance(AN_HOUR.minusSeconds(1));
 
@@ -91,9 +92,9 @@ class PollLazyCloseIT extends PostgresTestBase {
         clock.advance(AN_HOUR.plusSeconds(1));
 
         assertThatExceptionOfType(PollExceptions.PollClosedException.class)
-                .isThrownBy(() -> polls.vote(owner, asked.id(), asked.options().getFirst().id()));
+                .isThrownBy(() -> polls.vote(writable(owner), asked.id(), asked.options().getFirst().id()));
         assertThatExceptionOfType(PollExceptions.PollClosedException.class)
-                .isThrownBy(() -> polls.close(owner, asked.id()));
+                .isThrownBy(() -> polls.close(writable(owner), asked.id()));
     }
 
 
@@ -104,8 +105,8 @@ class PollLazyCloseIT extends PostgresTestBase {
         Membership member = new Membership(second, owner.itineraryId(), Role.MEMBER);
 
         PollView tied = ask(owner, "Tied?", List.of("A", "B"));
-        polls.vote(owner, tied.id(), tied.options().getFirst().id());
-        polls.vote(member, tied.id(), tied.options().get(1).id());
+        polls.vote(writable(owner), tied.id(), tied.options().getFirst().id());
+        polls.vote(writable(member), tied.id(), tied.options().get(1).id());
         PollView untouched = ask(owner, "Nobody cares?", List.of("A", "B"));
 
         clock.advance(AN_HOUR.plusSeconds(1));
@@ -125,7 +126,7 @@ class PollLazyCloseIT extends PostgresTestBase {
         Membership owner = ownerOfAFreshTrip();
         PollView asked = ask(owner, "Dinner?", List.of("Ramen", "Tacos"));
 
-        PollView closed = polls.close(owner, asked.id());
+        PollView closed = polls.close(writable(owner), asked.id());
 
         assertThat(closed.closed()).isTrue();
         assertThat(closed.closedAt()).isEqualTo(Instant.now(clock));
@@ -152,12 +153,12 @@ class PollLazyCloseIT extends PostgresTestBase {
 
 
     private PollView ask(Membership member, String question, List<String> options) {
-        return polls.ask(member, question, options, Instant.now(clock).plus(AN_HOUR));
+        return polls.ask(writable(member), question, options, Instant.now(clock).plus(AN_HOUR));
     }
 
 
     private PollView onlyPollOf(Membership member) {
-        PollBoard board = polls.board(audience.requireInAudience(member));
+        PollBoard board = polls.board(inAudience(member));
         List<PollView> everyPoll =
                 java.util.stream.Stream.concat(board.active().stream(), board.completed().stream()).toList();
         assertThat(everyPoll).hasSize(1);
@@ -166,7 +167,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
 
     private List<UUID> winnersOf(Membership member, UUID pollId) {
-        PollBoard board = polls.board(audience.requireInAudience(member));
+        PollBoard board = polls.board(inAudience(member));
         return java.util.stream.Stream.concat(board.active().stream(), board.completed().stream())
                 .filter(poll -> poll.id().equals(pollId))
                 .findFirst()
@@ -203,5 +204,17 @@ class PollLazyCloseIT extends PostgresTestBase {
         MutableClock pollLazyCloseTestClock() {
             return new MutableClock(START);
         }
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.Writable<Membership> writable(Membership member) {
+        return proofs().writable(member);
+    }
+
+    private TripFence.InAudience<Membership> inAudience(Membership member) {
+        return proofs().inAudience(member);
     }
 }

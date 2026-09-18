@@ -1,9 +1,11 @@
 package com.largata.trip.ownership.controller;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.AudienceFence;
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.ownership.service.MembershipService;
@@ -28,20 +30,22 @@ class TripMembershipController {
 
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
 
     TripMembershipController(
-            MembershipService memberships, AuthorizationGuard guard, AudienceFence audience) {
+            MembershipService memberships,
+            AuthorizationGuard guard,
+            TripFence fence) {
         this.memberships = memberships;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
     }
 
 
     @GetMapping("/members")
     Page<MemberResponse> members(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        audience.requireInAudience(membership);
+        fence.inAudience(membership);
         UUID offeredTo = memberships.pendingOfferTargetIn(membership).orElse(null);
         return Page.exhausted(
                 memberships.members(membership).stream()
@@ -57,7 +61,10 @@ class TripMembershipController {
             @PathVariable UUID itineraryId,
             @Valid @RequestBody OwnershipOfferRequest request) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.offerOwnership(membership, request.travelerId());
+        memberships.offerOwnership(
+                fence.membershipMutable(
+                        fence.owner(membership, NotTheTripOwnerException::toOfferOwnership)),
+                request.travelerId());
     }
 
 
@@ -65,7 +72,9 @@ class TripMembershipController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void revokeOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.revokeOwnershipOffer(membership);
+        memberships.revokeOwnershipOffer(
+                fence.membershipMutable(
+                        fence.owner(membership, NotTheTripOwnerException::toRevokeAnOffer)));
     }
 
 
@@ -73,7 +82,7 @@ class TripMembershipController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void acceptOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.acceptOwnershipOffer(membership);
+        memberships.acceptOwnershipOffer(fence.membershipMutable(membership));
     }
 
 
@@ -81,7 +90,7 @@ class TripMembershipController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void declineOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.declineOwnershipOffer(membership);
+        memberships.declineOwnershipOffer(fence.membershipMutable(membership));
     }
 
 

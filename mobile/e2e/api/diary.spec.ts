@@ -353,20 +353,19 @@ test('deleting an entry removes its bytes and frees the activity', async () => {
   expect(repost.status).toBe(201);
 });
 
-test('an archived trip refuses new writes while its entries stay readable', async () => {
+test('a DELETED trip is not found through its own diary root, for the author too (ADR-040)', async () => {
   await api(`/v1/trips/${trip}/archive`, 'POST', author);
-  const archivedEdit = await api(`${diary}/${entry.id}`, 'PATCH', author, {
-    caption: 'after the fence',
+  const deletedEdit = await api(`${diary}/${entry.id}`, 'PATCH', author, {
+    caption: 'after the delete',
   });
-  const archivedRead = await api(diary, 'GET', author);
-  const archivedTrips = await api('/v1/me/diary/trips', 'GET', author);
+  const deletedRead = await api(diary, 'GET', author);
+  const deletedTrips = await api('/v1/me/diary/trips', 'GET', author);
 
-  expect(archivedEdit.status).toBe(409);
-  expect(archivedRead.status).toBe(200);
+  expect(deletedEdit.status).toBe(404);
+  expect(deletedEdit.body?.code).toBe('ITINERARY_NOT_FOUND');
+  expect(deletedRead.status).toBe(404);
   expect(
-    archivedRead.body.items.some((row: { caption: string }) => row.caption === 'Second thoughts'),
-  ).toBe(true);
-  expect(
-    (archivedTrips.body?.items ?? []).some((row: { itineraryId: string }) => row.itineraryId === trip),
-  ).toBe(true);
+    (deletedTrips.body?.items ?? []).some((row: { itineraryId: string }) => row.itineraryId === trip),
+  )
+    .toBe(false);
 });

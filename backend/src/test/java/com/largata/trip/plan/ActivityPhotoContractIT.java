@@ -229,7 +229,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripRefusesAPhotoBecauseTheFenceCoversMedia() throws IOException {
+    void aDeletedTripIsNotFoundForAPhotoUpload_becauseTheFenceCoversMedia() throws IOException {
         Fixture trip = tripWithAnActivity();
         holdActivityLease(trip);
 
@@ -247,7 +247,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
                 .body(multipart(photo()))
                 .exchange()
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
     }
 
 

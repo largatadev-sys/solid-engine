@@ -47,12 +47,12 @@ describe('the Chat tab goes live — S4.10', () => {
   });
 
 
-  it('hands the tab the archived flag, so the notice bar is not a guess', () => {
+  it('hands the tab no archived flag — TW-2 deleted the notion (ADR-040)', () => {
     const screen = readFileSync(WORKSPACE_SCREEN, 'utf8');
     const mount = screen.slice(screen.indexOf('<WorkspaceChatTab'));
 
     expect(mount).not.toBe('');
-    expect(mount.slice(0, 200)).toContain('archived');
+    expect(mount.slice(0, 200)).not.toContain('archived');
   });
 
 
@@ -70,11 +70,6 @@ describe('the copy strings are the canvas strings, exactly', () => {
 
   it('says what frame 2 says on the empty thread', () => {
     expect(chatCopy.empty).toBe('Say hello — the plan starts here.');
-  });
-
-
-  it('says what frame 5 says on an archived trip', () => {
-    expect(chatCopy.archived).toBe('This trip is archived — chat is closed.');
   });
 
 

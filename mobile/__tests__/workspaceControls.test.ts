@@ -102,10 +102,6 @@ describe('ladderCta', () => {
     EVERY_STATE.forEach((state) => expect(ladderCta(trip({ state }), false)).toBeNull());
   });
 
-  it('hides the ladder on an archived trip', () => {
-    expect(ladderCta(trip({ state: 'upcoming', archived: true }), true)).toBeNull();
-  });
-
   it('blocks every rung while another traveler holds the editing session, and names them (S4.19)', () => {
     EVERY_STATE.forEach((state) => {
       const held = trip({ state, editingSession: holder('t2') });
@@ -182,13 +178,13 @@ describe('forwardConfirmWording', () => {
 describe('editItineraryAction', () => {
   it('opens the editor in place from every unpublished state — editing costs no state (S4.24)', () => {
     EVERY_STATE.forEach((state) =>
-      expect(editItineraryAction(trip({ state }), true)).toEqual({ kind: 'edit' }),
+      expect(editItineraryAction(trip({ state }))).toEqual({ kind: 'edit' }),
     );
   });
 
   it('is blocked while another traveler holds the Editing Session, and names them', () => {
     const held = trip({ editingSession: holder('t2') });
-    expect(editItineraryAction(held, true, 't1')).toEqual({
+    expect(editItineraryAction(held, 't1')).toEqual({
       kind: 'blocked',
       holder: '@largata.dev+t2',
     });
@@ -196,33 +192,26 @@ describe('editItineraryAction', () => {
 
   it('is not blocked by the viewers own session', () => {
     const mine = trip({ editingSession: holder('t1') });
-    expect(editItineraryAction(mine, true, 't1')).toEqual({ kind: 'edit' });
+    expect(editItineraryAction(mine, 't1')).toEqual({ kind: 'edit' });
   });
 
   it('lets a MEMBER edit at every unpublished rung — mid-trip changes are usually theirs (S4.24)', () => {
     EVERY_STATE.forEach((state) =>
-      expect(editItineraryAction(trip({ state }), true, 't2')).toEqual({ kind: 'edit' }),
-    );
-  });
-
-  it('hides Edit Itinerary from anyone without edit permission, whatever the state', () => {
-    EVERY_STATE.forEach((state) =>
-      expect(editItineraryAction(trip({ state }), false)).toEqual({ kind: 'hidden' }),
+      expect(editItineraryAction(trip({ state }), 't2')).toEqual({ kind: 'edit' }),
     );
   });
 
   it('blocks every state while another traveler holds the session, and names them', () => {
     EVERY_STATE.forEach((state) =>
-      expect(editItineraryAction(trip({ state, editingSession: holder('t2') }), true, 't1')).toEqual({
+      expect(editItineraryAction(trip({ state, editingSession: holder('t2') }), 't1')).toEqual({
         kind: 'blocked',
         holder: '@largata.dev+t2',
       }),
     );
   });
 
-  it('is hidden on archived and published trips', () => {
-    expect(editItineraryAction(trip({ archived: true }), true)).toEqual({ kind: 'hidden' });
-    expect(editItineraryAction(trip({ published: true, state: 'completed' }), true)).toEqual({
+  it('is hidden on a published trip — publishing is what freezes the plan (TW-2)', () => {
+    expect(editItineraryAction(trip({ published: true, state: 'completed' }))).toEqual({
       kind: 'hidden',
     });
   });

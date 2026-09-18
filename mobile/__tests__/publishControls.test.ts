@@ -9,19 +9,15 @@ import {
 
 describe('publishControl (ADR-019)', () => {
   it('offers publish while out of the feed and unpublish once in it, whichever audience', () => {
-    expect(publishControl({ published: false, archived: false }, true)).toBe('publish');
-    expect(publishControl({ published: true, archived: false }, true)).toBe('unpublish');
+    expect(publishControl({ published: false }, true)).toBe('publish');
+    expect(publishControl({ published: true }, true)).toBe('unpublish');
   });
 
   it('offers nothing to a member — publishing is the owner’s act', () => {
-    expect(publishControl({ published: false, archived: false }, false)).toBeNull();
-    expect(publishControl({ published: true, archived: false }, false)).toBeNull();
+    expect(publishControl({ published: false }, false)).toBeNull();
+    expect(publishControl({ published: true }, false)).toBeNull();
   });
 
-  it('offers nothing while archived — the fence rejects both verbs', () => {
-    expect(publishControl({ published: false, archived: true }, true)).toBeNull();
-    expect(publishControl({ published: true, archived: true }, true)).toBeNull();
-  });
 });
 
 describe('the freeze hangs on discovery, not on the audience', () => {
@@ -31,13 +27,10 @@ describe('the freeze hangs on discovery, not on the audience', () => {
   });
 
   it('lets only an unpublished trip be edited, whatever its audience', () => {
-    expect(isEditable({ published: false, archived: false })).toBe(true);
-    expect(isEditable({ published: true, archived: false })).toBe(false);
+    expect(isEditable({ published: false })).toBe(true);
+    expect(isEditable({ published: true })).toBe(false);
   });
 
-  it('lets an archived trip be edited by nobody either', () => {
-    expect(isEditable({ published: false, archived: true })).toBe(false);
-  });
 });
 
 describe('the publish gate', () => {

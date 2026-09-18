@@ -12,6 +12,5 @@ public record TripFacts(
         LocalDate startDate,
         LocalDate endDate,
         TripLifecycle lifecycle,
-        boolean published,
         boolean archived,
         Instant createdAt) {}

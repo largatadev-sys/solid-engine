@@ -1,7 +1,7 @@
 package com.largata.mytrips.dto;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.PublicationState;
+import com.largata.itinerary.api.PublishedItineraries;
 import com.largata.common.geo.PinPayload;
 import com.largata.trip.api.TripListEntry;
 import java.time.Instant;
@@ -47,12 +47,12 @@ public record MyTripResponse(
 
 
     public static Page<MyTripResponse> pageOf(
-            Page<TripListEntry> page, Map<UUID, PublicationState.LivePublication> live) {
+            Page<TripListEntry> page, Map<UUID, PublishedItineraries.LiveItinerary> live) {
         return page.map(trip -> of(trip, live.get(trip.id())));
     }
 
 
-    private static MyTripResponse of(TripListEntry trip, PublicationState.LivePublication live) {
+    private static MyTripResponse of(TripListEntry trip, PublishedItineraries.LiveItinerary live) {
         return new MyTripResponse(
                 trip.id(),
                 trip.title(),

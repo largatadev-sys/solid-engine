@@ -19,6 +19,4 @@ public interface TripApi {
     Map<UUID, String> titlesByIds(Collection<UUID> tripIds);
 
     long shareCardVersionOf(UUID tripId);
-
-    boolean frozen(UUID tripId);
 }

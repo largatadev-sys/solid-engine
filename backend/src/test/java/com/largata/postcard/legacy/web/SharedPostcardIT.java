@@ -114,7 +114,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
 
     @Test
-    void theArchiveFenceStillRefusesAWriteWhileTheEntryStaysReadable() throws IOException {
+    void aDeletedTripAnswersNotFoundOnItsOwnDiaryRoot_readsAndWritesAlike() throws IOException {
         Fixture trip = startedTrip();
         Entry entry = post(trip.owner(), trip, trip.activityId(), "before the archive", 1);
         archive(trip);
@@ -125,14 +125,14 @@ class SharedPostcardIT extends ObjectStoreTestBase {
                         trip.owner(),
                         "{\"caption\":\"edited after the freeze\"}")
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
 
         rest.get()
                 .uri(diaryUri(trip) + "/" + entry.id())
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .isNotFound();
     }
 
 

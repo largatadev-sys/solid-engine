@@ -3,7 +3,6 @@ package com.largata.trip.workspace.entity;
 
 public enum WorkspaceState {
     ACTIVE,
-    COMPLETED,
     ARCHIVED;
 
 
@@ -12,7 +11,7 @@ public enum WorkspaceState {
     }
 
 
-    public String wireName() {
-        return name().toLowerCase(java.util.Locale.ROOT);
+    public boolean isOpen() {
+        return this == ACTIVE;
     }
 }

@@ -317,33 +317,31 @@ class PollContractIT extends PostgresTestBase {
 
 
     @Test
-    void anArchivedTripFreezesPollWritesForTheOwnerAndHidesTheBoardFromEveryoneElse() {
+    void aDeletedTripHidesItsPollBoardFromEverybody_theOwnerIncluded() {
         Fixture trip = tripWithAMember();
         String pollId = askAs(trip.owner(), trip, "Dinner tonight?", List.of("Ramen", "Tacos"));
         String optionId = optionIdsOf(pollAs(trip.owner(), trip, pollId)).getFirst();
         archive(trip);
 
-        assertThat(activeIdsOf(boardAs(trip.owner(), trip)))
-                .as("S4.23 posture: the owner still reads a frozen board")
-                .containsExactly(pollId);
+        rig.send(HttpMethod.GET, pollsUri(trip), trip.owner(), null).expectStatus().isNotFound();
         rig.send(HttpMethod.GET, pollsUri(trip), trip.member(), null).expectStatus().isNotFound();
 
         rig.send(HttpMethod.POST, pollsUri(trip), trip.owner(), createBody("After", List.of("A", "B"), inADay()))
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
         rig.send(
                         HttpMethod.PUT,
                         pollsUri(trip) + "/" + pollId + "/vote",
                         trip.owner(),
                         "{\"optionId\":\"" + optionId + "\"}")
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
         rig.send(HttpMethod.POST, pollsUri(trip) + "/" + pollId + "/close", trip.owner(), null)
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
         rig.send(HttpMethod.DELETE, pollsUri(trip) + "/" + pollId, trip.owner(), null)
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
     }
 
 

@@ -1,6 +1,6 @@
 package com.largata.trip.plan.service;
 
-import com.largata.common.authz.ItineraryNotFoundException;
+import com.largata.trip.exception.ItineraryNotFoundException;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;

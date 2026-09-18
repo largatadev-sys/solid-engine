@@ -70,7 +70,6 @@ export function DiaryEntryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntry
   const dump = usePhotoDump(id);
 
   const entry = entries.data?.find((candidate) => candidate.id === entryId);
-  const archived = trip.data?.archived ?? false;
 
   const save = useSaveDiaryEntry(id, entryId);
   const remove = useDeleteDiaryEntry(id);
@@ -110,7 +109,7 @@ export function DiaryEntryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntry
   const editing = staged ?? stagedFrom(entry);
   const total = stagedPhotoCount(editing);
   const room = roomLeft(total);
-  const editable = !archived;
+  const editable = true;
   const tiles = tilesOf(
     editing,
     entry.photos,

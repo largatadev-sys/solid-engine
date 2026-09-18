@@ -1,8 +1,10 @@
 package com.largata.trip.trip.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.AudienceFence;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.trip.dto.CreateTripRequest;
@@ -38,7 +40,7 @@ class TripController {
     private final TripCoverService covers;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
 
     TripController(
             TripService itineraries,
@@ -46,13 +48,13 @@ class TripController {
             TripCoverService covers,
             MembershipService memberships,
             AuthorizationGuard guard,
-            AudienceFence audience) {
+            TripFence fence) {
         this.itineraries = itineraries;
         this.forks = forks;
         this.covers = covers;
         this.memberships = memberships;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
     }
 
 
@@ -63,7 +65,7 @@ class TripController {
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
         Membership membership = guard.requireMember(traveler.id(), id);
-        covers.replaceCover(membership, photo.getBytes());
+        covers.replaceCover(fence.editable(membership), photo.getBytes());
         return TripResponse.of(itineraries.viewPlan(membership));
     }
 
@@ -71,7 +73,7 @@ class TripController {
     @DeleteMapping("/{id}/cover")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void removeCover(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        covers.removeCover(guard.requireMember(traveler.id(), id));
+        covers.removeCover(fence.editable(guard.requireMember(traveler.id(), id)));
     }
 
 
@@ -88,7 +90,7 @@ class TripController {
     @GetMapping("/{id}")
     TripResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        audience.requireInAudience(membership);
+        fence.inAudience(membership);
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan, forks.provenanceOf(id, traveler.id()).orElse(null));
     }
@@ -100,7 +102,9 @@ class TripController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTripRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.editFields(membership, request::mergeOnto);
+        itineraries.editFields(
+                fence.editable(fence.owner(membership, NotTheTripOwnerException::toEditTheTripsDetails)),
+                request::mergeOnto);
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);
     }
@@ -109,7 +113,7 @@ class TripController {
     @PostMapping("/{id}/start")
     TripResponse start(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.start(membership);
+        itineraries.start(fence.editable(theOwner(membership)));
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);
     }
@@ -118,7 +122,7 @@ class TripController {
     @PostMapping("/{id}/complete")
     TripResponse complete(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.complete(membership);
+        itineraries.complete(fence.editable(theOwner(membership)));
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);
     }
@@ -127,7 +131,7 @@ class TripController {
     @PostMapping("/{id}/reopen")
     TripResponse reopen(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.reopen(membership);
+        itineraries.reopen(fence.writable(theOwner(membership)));
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);
     }
@@ -136,7 +140,7 @@ class TripController {
     @PostMapping("/{id}/archive")
     TripResponse archive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        memberships.archive(membership);
+        memberships.archive(theOwnerChangingTheArchiveState(membership));
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);
     }
@@ -145,8 +149,18 @@ class TripController {
     @PostMapping("/{id}/unarchive")
     TripResponse unarchive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        memberships.unarchive(membership);
+        memberships.unarchive(theOwnerChangingTheArchiveState(membership));
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);
+    }
+
+
+    private Owner theOwner(Membership membership) {
+        return fence.owner(membership, NotTheTripOwnerException::toStartOrCompleteTheTrip);
+    }
+
+
+    private Owner theOwnerChangingTheArchiveState(Membership membership) {
+        return Owner.of(membership, NotTheTripOwnerException::toChangeArchiveState);
     }
 }

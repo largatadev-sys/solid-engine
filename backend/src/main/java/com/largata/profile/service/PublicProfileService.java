@@ -209,11 +209,9 @@ public class PublicProfileService {
             return List.of();
         }
         List<UUID> tripIds = rows.stream().map(SharedEntries.TripRoll::tripId).toList();
-        Set<UUID> archived = workspaces.archivedAmong(tripIds);
         Map<UUID, TripTeaser> trips = tripsOf(tripIds);
 
         return rows.stream()
-                .filter(row -> !archived.contains(row.tripId()))
                 .map(row -> sectionOf(row, trips))
                 .filter(section -> section != null)
                 .toList();

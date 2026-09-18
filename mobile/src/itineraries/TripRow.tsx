@@ -15,9 +15,9 @@ import { editingAdvisory, tripCardSubline } from './tripTabs';
 
 
 export function tripRowDestination(
-  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published' | 'state'>,
+  itinerary: Pick<ItineraryResponse, 'id' | 'published' | 'state'>,
 ) {
-  if (!itinerary.archived && itinerary.published) {
+  if (itinerary.published) {
     return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
   }
   return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };

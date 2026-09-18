@@ -2,8 +2,10 @@ package com.largata.poll;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.support.Proofs;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.api.Role;
 import com.largata.poll.service.PollService;
 import com.largata.poll.service.PollView;
 import com.largata.support.PostgresTestBase;
@@ -27,6 +29,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class PollVoteRaceIT extends PostgresTestBase {
 
     @Autowired private PollService polls;
+    @Autowired private TripFence fence;
     @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
 
@@ -35,7 +38,7 @@ class PollVoteRaceIT extends PostgresTestBase {
         Membership owner = ownerOfAFreshTrip();
         PollView asked =
                 polls.ask(
-                        owner,
+                        writable(owner),
                         "Dinner?",
                         List.of("Ramen", "Tacos"),
                         Instant.now().plus(Duration.ofDays(1)));
@@ -58,13 +61,13 @@ class PollVoteRaceIT extends PostgresTestBase {
         Membership owner = ownerOfAFreshTrip();
         PollView asked =
                 polls.ask(
-                        owner,
+                        writable(owner),
                         "Dinner?",
                         List.of("Ramen", "Tacos"),
                         Instant.now().plus(Duration.ofDays(1)));
 
-        polls.vote(owner, asked.id(), asked.options().getFirst().id());
-        PollView moved = polls.vote(owner, asked.id(), asked.options().get(1).id());
+        polls.vote(writable(owner), asked.id(), asked.options().getFirst().id());
+        PollView moved = polls.vote(writable(owner), asked.id(), asked.options().get(1).id());
 
         assertThat(votesOn(asked.id())).isEqualTo(1);
         assertThat(moved.myVoteOptionId()).isEqualTo(asked.options().get(1).id());
@@ -92,7 +95,7 @@ class PollVoteRaceIT extends PostgresTestBase {
 
     private int voteQuietly(Membership member, UUID pollId, UUID optionId) {
         try {
-            polls.vote(member, pollId, optionId);
+            polls.vote(writable(member), pollId, optionId);
             return 1;
         } catch (RuntimeException lostTheRace) {
             return 0;
@@ -111,5 +114,13 @@ class PollVoteRaceIT extends PostgresTestBase {
         UUID ownerId = UUID.randomUUID();
         Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.Writable<Membership> writable(Membership member) {
+        return proofs().writable(member);
     }
 }

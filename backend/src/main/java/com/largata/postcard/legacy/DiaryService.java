@@ -4,9 +4,8 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
-import com.largata.common.authz.InAudience;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.api.Membership;
 import com.largata.common.tx.AfterCommit;
 import com.largata.postcard.legacy.DiaryEntryResponse;
 import com.largata.postcard.legacy.DiaryPhotoResponse;
@@ -57,7 +56,6 @@ public class DiaryService {
     private final DayRepository days;
     private final TripRepository itineraries;
     private final PhotoService photos;
-    private final WriteFence writeFence;
     private final WorkspaceService workspaces;
     private final Analytics analytics;
 
@@ -67,7 +65,6 @@ public class DiaryService {
             DayRepository days,
             TripRepository itineraries,
             PhotoService photos,
-            WriteFence writeFence,
             WorkspaceService workspaces,
             Analytics analytics) {
         this.entries = entries;
@@ -75,7 +72,6 @@ public class DiaryService {
         this.days = days;
         this.itineraries = itineraries;
         this.photos = photos;
-        this.writeFence = writeFence;
         this.workspaces = workspaces;
         this.analytics = analytics;
     }
@@ -83,12 +79,12 @@ public class DiaryService {
 
     @Transactional
     public DiaryEntryResponse post(
-            Membership member,
+            TripFence.Writable<?> writable,
             UUID activityId,
             String caption,
             List<UUID> fromDump,
             List<byte[]> devicePhotos) {
-        writeFence.requireWritable(member);
+        Membership member = writable.member();
         Trip trip = requireStarted(member);
 
         int total = fromDump.size() + devicePhotos.size();
@@ -132,8 +128,9 @@ public class DiaryService {
 
 
     @Transactional
-    public DiaryEntryResponse recaption(Membership member, UUID entryId, String caption) {
-        writeFence.requireWritable(member);
+    public DiaryEntryResponse recaption(
+            TripFence.Writable<?> writable, UUID entryId, String caption) {
+        Membership member = writable.member();
         LegacyEntries.Entry entry = requireMyEntry(member, entryId);
         LegacyEntries.Entry saved = entries.recaption(entry.id(), caption);
         emit(member, "diary_entry_edited", entryId);
@@ -142,7 +139,9 @@ public class DiaryService {
 
 
     @Transactional
-    public DiaryEntryResponse addDevicePhoto(Membership member, UUID entryId, byte[] uploaded) {
+    public DiaryEntryResponse addDevicePhoto(
+            TripFence.Writable<?> writable, UUID entryId, byte[] uploaded) {
+        Membership member = writable.member();
         LegacyEntries.Entry entry = requireRoomForAPhoto(member, entryId);
         photos.add(PhotoSubject.POSTCARD, entry.id(), uploaded, member.travelerId());
         emit(member, "diary_entry_edited", entryId);
@@ -151,7 +150,9 @@ public class DiaryService {
 
 
     @Transactional
-    public DiaryEntryResponse addPhotoFromDump(Membership member, UUID entryId, UUID dumpPhotoId) {
+    public DiaryEntryResponse addPhotoFromDump(
+            TripFence.Writable<?> writable, UUID entryId, UUID dumpPhotoId) {
+        Membership member = writable.member();
         LegacyEntries.Entry entry = requireRoomForAPhoto(member, entryId);
         photos.copyTo(
                 requireDumpPhotoOfTrip(member, dumpPhotoId),
@@ -164,8 +165,9 @@ public class DiaryService {
 
 
     @Transactional
-    public DiaryEntryResponse removePhoto(Membership member, UUID entryId, UUID photoId) {
-        writeFence.requireWritable(member);
+    public DiaryEntryResponse removePhoto(
+            TripFence.Writable<?> writable, UUID entryId, UUID photoId) {
+        Membership member = writable.member();
         LegacyEntries.Entry entry = requireMyEntry(member, entryId);
 
         Photo photo =
@@ -185,8 +187,8 @@ public class DiaryService {
 
 
     @Transactional
-    public void delete(Membership member, UUID entryId) {
-        writeFence.requireWritable(member);
+    public void delete(TripFence.Writable<?> writable, UUID entryId) {
+        Membership member = writable.member();
         LegacyEntries.Entry entry = requireMyEntry(member, entryId);
 
         photos.allOf(PhotoSubject.POSTCARD, entry.id()).forEach(photo -> photos.delete(photo.id()));
@@ -198,7 +200,8 @@ public class DiaryService {
 
 
     @Transactional(readOnly = true)
-    public Page<DiaryEntryResponse> mine(InAudience audience, String cursor, Integer requestedLimit) {
+    public Page<DiaryEntryResponse> mine(
+            TripFence.InAudience<?> audience, String cursor, Integer requestedLimit) {
         Membership member = audience.member();
         int limit = clamp(requestedLimit);
         List<LegacyEntries.Entry> found =
@@ -217,7 +220,7 @@ public class DiaryService {
 
 
     @Transactional(readOnly = true)
-    public DiaryEntryResponse mineById(InAudience audience, UUID entryId) {
+    public DiaryEntryResponse mineById(TripFence.InAudience<?> audience, UUID entryId) {
         return viewOf(requireMyEntry(audience.member(), entryId));
     }
 
@@ -339,7 +342,6 @@ public class DiaryService {
 
 
     private LegacyEntries.Entry requireRoomForAPhoto(Membership member, UUID entryId) {
-        writeFence.requireWritable(member);
         LegacyEntries.Entry entry = requireMyEntry(member, entryId);
         if (photos.countOf(PhotoSubject.POSTCARD, entry.id()) >= MAX_PHOTOS_PER_ENTRY) {
             throw new TooManyDiaryPhotosException(MAX_PHOTOS_PER_ENTRY);

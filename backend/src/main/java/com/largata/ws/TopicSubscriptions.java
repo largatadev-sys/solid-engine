@@ -1,6 +1,6 @@
 package com.largata.ws;
 
-import com.largata.common.authz.AuthorizationGuard;
+import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.MembershipApi;
 import java.util.Optional;
 import java.util.UUID;

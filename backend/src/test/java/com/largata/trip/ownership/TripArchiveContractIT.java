@@ -74,19 +74,32 @@ class TripArchiveContractIT extends PostgresTestBase {
 
 
     @Test
-    void unarchiveRestoresCompletedForACompletedTripAndActiveForEverythingElse() {
+    void unarchiveAnswersCompletedForACompletedTripAndActiveForEverythingElse() {
         String owner = freshTraveler();
 
         String completed = createItinerary(owner);
         start(owner, completed).expectStatus().isOk();
         complete(owner, completed).expectStatus().isOk();
         archive(owner, completed).expectStatus().isOk();
-        unarchive(owner, completed).expectStatus().isOk();
-        assertThat(workspaceStateOf(completed)).isEqualTo("COMPLETED");
+        unarchive(owner, completed)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.workspaceState")
+                .isEqualTo("completed");
+        assertThat(workspaceStateOf(completed))
+                .as("TW-2: the ROOM is open — `completed` is the lifecycle, projected onto the wire"
+                        + " beside it, rather than a second copy of it stored here")
+                .isEqualTo("ACTIVE");
 
         String neverTravelled = createItinerary(owner);
         archive(owner, neverTravelled).expectStatus().isOk();
-        unarchive(owner, neverTravelled).expectStatus().isOk();
+        unarchive(owner, neverTravelled)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.workspaceState")
+                .isEqualTo("active");
         assertThat(workspaceStateOf(neverTravelled)).isEqualTo("ACTIVE");
     }
 

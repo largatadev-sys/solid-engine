@@ -2,8 +2,11 @@ package com.largata.trip.workspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.support.Proofs;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.api.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.util.UUID;
@@ -20,6 +23,7 @@ import com.largata.trip.workspace.entity.WorkspaceState;
 class WorkspaceStateStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
+    @Autowired private TripFence fence;
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
 
@@ -35,15 +39,20 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
 
 
     @Test
-    void aCompletedTripsWorkspaceStoresCOMPLETED() {
+    void aCompletedTripsRoomStaysOpen_becauseTheLifecycleIsNotTheWorkspacesFactToStore() {
         Trip trip = createTrip();
         UUID owner = trip.ownerId();
 
-        itineraries.start(ownerOf(trip, owner));
-        itineraries.complete(ownerOf(trip, owner));
+        itineraries.start(editableOwner(ownerOf(trip, owner)));
+        itineraries.complete(editableOwner(ownerOf(trip, owner)));
 
-        assertThat(storedState(trip.id())).isEqualTo("COMPLETED");
-        assertThat(workspaces.stateOf(trip.id())).contains(WorkspaceState.COMPLETED);
+        assertThat(storedState(trip.id()))
+                .as("TW-2: COMPLETED was a stored copy of the ITINERARY's lifecycle, written as a"
+                        + " side effect of a transition that had no business writing here. The room"
+                        + " of a completed trip is open — members still chat, poll and post — and"
+                        + " the wire still answers `completed` by projecting the lifecycle beside it")
+                .isEqualTo("ACTIVE");
+        assertThat(workspaces.stateOf(trip.id())).contains(WorkspaceState.ACTIVE);
     }
 
 
@@ -82,5 +91,13 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
     private String storedState(UUID itineraryId) {
         return jdbc.queryForObject(
                 "SELECT state FROM workspace WHERE itinerary_id = ?", String.class, itineraryId);
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.Editable<Owner> editableOwner(Membership member) {
+        return proofs().editableOwner(member);
     }
 }

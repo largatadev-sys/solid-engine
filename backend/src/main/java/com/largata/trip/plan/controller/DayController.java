@@ -1,7 +1,10 @@
 package com.largata.trip.plan.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.plan.dto.DayRequest;
@@ -26,10 +29,12 @@ class DayController {
 
     private final DayService days;
     private final AuthorizationGuard guard;
+    private final TripFence fence;
 
-    DayController(DayService days, AuthorizationGuard guard) {
+    DayController(DayService days, AuthorizationGuard guard, TripFence fence) {
         this.days = days;
         this.guard = guard;
+        this.fence = fence;
     }
 
     @PostMapping
@@ -38,8 +43,7 @@ class DayController {
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @Valid @RequestBody DayRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return DayResponse.of(days.appendDay(member, request.title()));
+        return DayResponse.of(days.appendDay(theOwnerEditing(traveler, itineraryId), request.title()));
     }
 
     @PatchMapping("/{dayId}")
@@ -49,14 +53,19 @@ class DayController {
             @PathVariable UUID dayId,
             @Valid @RequestBody DayRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return DayResponse.of(days.renameDay(member, dayId, request.title()));
+        return DayResponse.of(days.renameDay(fence.editable(member), dayId, request.title()));
     }
 
     @DeleteMapping("/{dayId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(
             @CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId, @PathVariable UUID dayId) {
+        days.deleteDay(theOwnerEditing(traveler, itineraryId), dayId);
+    }
+
+
+    private TripFence.Editable<Owner> theOwnerEditing(Traveler traveler, UUID itineraryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        days.deleteDay(member, dayId);
+        return fence.editable(fence.owner(member, NotTheTripOwnerException::toAddOrRemoveDays));
     }
 }

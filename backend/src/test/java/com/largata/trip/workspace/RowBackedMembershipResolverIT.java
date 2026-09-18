@@ -3,10 +3,10 @@ package com.largata.trip.workspace;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.ItineraryNotFoundException;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.exception.ItineraryNotFoundException;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
@@ -91,8 +91,8 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
         UUID ana = UUID.randomUUID();
         UUID orphanedTrip = UUID.randomUUID();
         jdbc.update(
-                "INSERT INTO itinerary (id, owner_id, title, destination, standouts, state, published,"
-                        + " created_at) VALUES (?, ?, 'Pre-E1 leftover', ?, '{}', 'DRAFT', false, ?)",
+                "INSERT INTO itinerary (id, owner_id, title, destination, standouts, state,"
+                        + " created_at) VALUES (?, ?, 'Pre-E1 leftover', ?, '{}', 'DRAFT', ?)",
                 orphanedTrip,
                 ana,
                 "nowhere",

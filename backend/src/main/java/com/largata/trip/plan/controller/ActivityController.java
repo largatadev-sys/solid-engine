@@ -1,7 +1,8 @@
 package com.largata.trip.plan.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.plan.dto.ActivityRequest;
@@ -35,14 +36,17 @@ class ActivityController {
     private final ActivityService activities;
     private final ActivityPhotoService activityPhotos;
     private final AuthorizationGuard guard;
+    private final TripFence fence;
 
     ActivityController(
             ActivityService activities,
             ActivityPhotoService activityPhotos,
-            AuthorizationGuard guard) {
+            AuthorizationGuard guard,
+            TripFence fence) {
         this.activities = activities;
         this.activityPhotos = activityPhotos;
         this.guard = guard;
+        this.fence = fence;
     }
 
     @PostMapping
@@ -53,7 +57,7 @@ class ActivityController {
             @PathVariable UUID dayId,
             @Valid @RequestBody ActivityRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ActivityResponse.of(activities.create(member, dayId, request.toFields()));
+        return ActivityResponse.of(activities.create(fence.editable(member), dayId, request.toFields()));
     }
 
     @PatchMapping("/{activityId}")
@@ -64,7 +68,7 @@ class ActivityController {
             @PathVariable UUID activityId,
             @Valid @RequestBody ActivityRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ActivityResponse.of(activities.edit(member, dayId, activityId, request.toFields()));
+        return ActivityResponse.of(activities.edit(fence.editable(member), dayId, activityId, request.toFields()));
     }
 
     @DeleteMapping("/{activityId}")
@@ -75,7 +79,7 @@ class ActivityController {
             @PathVariable UUID dayId,
             @PathVariable UUID activityId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        activities.delete(member, dayId, activityId);
+        activities.delete(fence.editable(member), dayId, activityId);
     }
 
 
@@ -89,7 +93,7 @@ class ActivityController {
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        activityPhotos.add(member, activityId, photo.getBytes());
+        activityPhotos.add(fence.editable(member), activityId, photo.getBytes());
         return ActivityResponse.of(activities.view(member, dayId, activityId));
     }
 
@@ -102,7 +106,8 @@ class ActivityController {
             @PathVariable UUID dayId,
             @PathVariable UUID activityId,
             @PathVariable UUID photoId) {
-        activityPhotos.remove(guard.requireMember(traveler.id(), itineraryId), activityId, photoId);
+        activityPhotos.remove(
+                fence.editable(guard.requireMember(traveler.id(), itineraryId)), activityId, photoId);
     }
 
 
@@ -114,7 +119,8 @@ class ActivityController {
             @Valid @RequestBody ReorderActivitiesRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         return DayResponse.of(
-                activities.reorder(member, dayId, request.expectedActivityIds(), request.activityIds()));
+                activities.reorder(
+                        fence.editable(member), dayId, request.expectedActivityIds(), request.activityIds()));
     }
 
 
@@ -126,6 +132,6 @@ class ActivityController {
             @PathVariable UUID activityId,
             @Valid @RequestBody MoveActivityRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ActivityResponse.of(activities.move(member, dayId, activityId, request.targetDayId()));
+        return ActivityResponse.of(activities.move(fence.editable(member), dayId, activityId, request.targetDayId()));
     }
 }

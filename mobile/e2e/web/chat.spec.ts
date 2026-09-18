@@ -325,25 +325,6 @@ test('Discard removes the failed bubble and leaves the composer usable', async (
 });
 
 
-test('an archived trip renders the notice bar and no composer at all', async ({ page, signIn }) => {
-  const archived = await api(`/v1/trips/${trip}/archive`, 'POST', ownerToken, {});
-  expect(archived.status).toBe(200);
-
-  try {
-    await signIn(OWNER);
-    await page.goto(chatRoute(trip));
-
-    await expect(page.getByText(chatCopy.archived, { exact: true })).toBeVisible({
-      timeout: ARRIVAL_TIMEOUT_MS,
-    });
-    await expect(labelled(page, 'Send')).toHaveCount(0);
-    await expect(labelled(page, 'Message')).toHaveCount(0);
-  } finally {
-    await api(`/v1/trips/${trip}/unarchive`, 'POST', ownerToken, {});
-  }
-});
-
-
 test('a fresh trip shows the empty state, exactly as the canvas words it', async ({
   page,
   signIn,

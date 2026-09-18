@@ -2,10 +2,10 @@ package com.largata.invitation.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.PublicationState;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
+import com.largata.itinerary.api.PublishedItineraries;
+import com.largata.trip.api.TripFence;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
@@ -57,8 +57,8 @@ public class InvitationService implements InvitationApi {
     private final TripApi itineraries;
     private final TravelerService travelers;
     private final AuthorizationGuard guard;
-    private final WriteFence fence;
-    private final PublicationState publication;
+    private final TripFence fence;
+    private final PublishedItineraries publishedItineraries;
     private final InboxTopic inbox;
     private final InvitationMailer mailer;
     private final Analytics analytics;
@@ -71,8 +71,8 @@ public class InvitationService implements InvitationApi {
             TripApi itineraries,
             TravelerService travelers,
             AuthorizationGuard guard,
-            WriteFence fence,
-            PublicationState publication,
+            TripFence fence,
+            PublishedItineraries publishedItineraries,
             InvitationMailer mailer,
             Analytics analytics,
             ApplicationEventPublisher events,
@@ -80,7 +80,7 @@ public class InvitationService implements InvitationApi {
             Clock clock) {
         this.inbox = inbox;
         this.fence = fence;
-        this.publication = publication;
+        this.publishedItineraries = publishedItineraries;
         this.events = events;
         this.invitations = invitations;
         this.workspaces = workspaces;
@@ -95,7 +95,8 @@ public class InvitationService implements InvitationApi {
 
 
     @Transactional
-    public PendingInvitation invite(Membership member, String rawEmail) {
+    public PendingInvitation invite(TripFence.MembershipMutable<?> mutable, String rawEmail) {
+        Membership member = mutable.member();
         UUID itineraryId = member.itineraryId();
         UUID workspaceId = authorizeIssuance(member);
         String email = normalize(rawEmail);
@@ -122,7 +123,9 @@ public class InvitationService implements InvitationApi {
 
 
     @Transactional
-    public PendingInvitation inviteByHandle(Membership member, String rawHandle) {
+    public PendingInvitation inviteByHandle(
+            TripFence.MembershipMutable<?> mutable, String rawHandle) {
+        Membership member = mutable.member();
         UUID itineraryId = member.itineraryId();
         UUID workspaceId = authorizeIssuance(member);
         TravelerSummary invitee =
@@ -154,7 +157,6 @@ public class InvitationService implements InvitationApi {
 
 
     private UUID authorizeIssuance(Membership member) {
-        fence.requireMembershipMutable(member);
         return workspaces
                 .workspaceIdOf(member.itineraryId())
                 .orElseThrow(() -> new IllegalStateException("Member has no workspace - invariant breach"));
@@ -191,8 +193,7 @@ public class InvitationService implements InvitationApi {
                 invitations.findById(invitationId).orElseThrow(InvitationNotFoundException::new);
         UUID itineraryId =
                 workspaces.tripIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
-        Membership caller = guard.requireMember(travelerId, itineraryId);
-        fence.requireMembershipMutable(caller);
+        fence.membershipMutable(guard.requireMember(travelerId, itineraryId));
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
@@ -212,7 +213,7 @@ public class InvitationService implements InvitationApi {
 
     @Transactional(readOnly = true)
     public List<PendingInvitation> pendingInvitations(Membership member) {
-        if (publication.isPublished(member.itineraryId())) {
+        if (!publishedItineraries.publishedAmong(List.of(member.itineraryId())).isEmpty()) {
             return List.of();
         }
         UUID workspaceId = workspaces.workspaceIdOf(member.itineraryId()).orElseThrow();
@@ -275,7 +276,7 @@ public class InvitationService implements InvitationApi {
         }
         Map<UUID, UUID> itineraryIds =
                 workspaces.tripIdsByWorkspace(rows.stream().map(Invitation::workspaceId).toList());
-        Set<UUID> frozen = publication.publishedAmong(itineraryIds.values());
+        Set<UUID> frozen = publishedItineraries.publishedAmong(itineraryIds.values());
         List<Invitation> live =
                 rows.stream().filter(i -> !frozen.contains(itineraryIds.get(i.workspaceId()))).toList();
         if (live.isEmpty()) {
@@ -350,7 +351,7 @@ public class InvitationService implements InvitationApi {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException("You are already a member of this trip.");
         }
-        fence.requireMembershipUnfrozen(itineraryId);
+        fence.unfrozen(itineraryId);
 
         Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);

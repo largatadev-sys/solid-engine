@@ -8,10 +8,8 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
-import com.largata.common.authz.InAudience;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.PublicationState;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -35,8 +33,6 @@ public class ChatService {
 
     private final ChatMessageRepository messages;
     private final TravelerService travelers;
-    private final WriteFence writeFence;
-    private final PublicationState publication;
     private final ChatTopic topic;
     private final Analytics analytics;
     private final Clock clock;
@@ -44,15 +40,11 @@ public class ChatService {
     ChatService(
             ChatMessageRepository messages,
             TravelerService travelers,
-            WriteFence writeFence,
-            PublicationState publication,
             ChatTopic topic,
             Analytics analytics,
             Clock clock) {
         this.messages = messages;
         this.travelers = travelers;
-        this.writeFence = writeFence;
-        this.publication = publication;
         this.topic = topic;
         this.analytics = analytics;
         this.clock = clock;
@@ -60,11 +52,8 @@ public class ChatService {
 
 
     @Transactional
-    public ChatMessageView send(Membership member, String body) {
-        writeFence.requireWritable(member);
-        if (publication.isPublished(member.itineraryId())) {
-            throw new ChatExceptions.ChatClosedException();
-        }
+    public ChatMessageView send(TripFence.Editable<?> editable, String body) {
+        Membership member = editable.member();
         ChatMessage appended =
                 messages.save(
                         ChatMessage.appended(
@@ -78,7 +67,8 @@ public class ChatService {
 
 
     @Transactional(readOnly = true)
-    public Page<ChatMessageView> thread(InAudience audience, String cursor, Integer requestedLimit) {
+    public Page<ChatMessageView> thread(
+            TripFence.InAudience<?> audience, String cursor, Integer requestedLimit) {
         UUID itineraryId = audience.member().itineraryId();
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);

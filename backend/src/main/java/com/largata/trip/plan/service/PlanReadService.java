@@ -3,6 +3,7 @@ package com.largata.trip.plan.service;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.trip.api.ActivityFacts;
+import com.largata.trip.api.Membership;
 import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripPlan;
@@ -19,6 +20,7 @@ import com.largata.trip.plan.repository.DayRepository;
 import com.largata.trip.plan.repository.ActivityRepository;
 import com.largata.trip.plan.entity.Activity;
 import com.largata.trip.plan.entity.Day;
+import com.largata.trip.editing.service.EditLeaseService;
 
 
 @Service
@@ -28,16 +30,25 @@ class PlanReadService implements PlanApi {
     private final ActivityRepository activities;
     private final TripPlanHeaders headers;
     private final PhotoService photos;
+    private final EditLeaseService leases;
 
     PlanReadService(
             DayRepository days,
             ActivityRepository activities,
             TripPlanHeaders headers,
-            PhotoService photos) {
+            PhotoService photos,
+            EditLeaseService leases) {
         this.days = days;
         this.activities = activities;
         this.headers = headers;
         this.photos = photos;
+        this.leases = leases;
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<String> planHeldByAnotherTraveler(Membership member) {
+        return leases.foreignSessionHolderLabel(member);
     }
 
 

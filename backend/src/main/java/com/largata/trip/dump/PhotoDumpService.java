@@ -1,9 +1,8 @@
 package com.largata.trip.dump;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.InAudience;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -21,24 +20,24 @@ public class PhotoDumpService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final PhotoService photos;
-    private final WriteFence writeFence;
+    private final TripFence fence;
 
-    PhotoDumpService(PhotoService photos, WriteFence writeFence) {
+    PhotoDumpService(PhotoService photos, TripFence fence) {
         this.photos = photos;
-        this.writeFence = writeFence;
+        this.fence = fence;
     }
 
 
     @Transactional
-    public Photo add(Membership member, byte[] uploaded) {
-        writeFence.requireWritable(member);
+    public Photo add(TripFence.Writable<?> writable, byte[] uploaded) {
+        Membership member = writable.member();
         return photos.add(
                 PhotoSubject.ITINERARY_PHOTO_DUMP, member.itineraryId(), uploaded, member.travelerId());
     }
 
 
     @Transactional(readOnly = true)
-    public Page<Photo> list(InAudience audience, String cursor, Integer requestedLimit) {
+    public Page<Photo> list(TripFence.InAudience<?> audience, String cursor, Integer requestedLimit) {
         return photos.pageOf(
                 PhotoSubject.ITINERARY_PHOTO_DUMP,
                 audience.member().itineraryId(),
@@ -48,8 +47,8 @@ public class PhotoDumpService {
 
 
     @Transactional
-    public void remove(Membership member, UUID photoId) {
-        writeFence.requireWritable(member);
+    public void remove(TripFence.Writable<?> writable, UUID photoId) {
+        Membership member = writable.member();
         Photo photo = photoOfThisPool(member, photoId);
         if (!member.isOwner() && !photo.uploadedBy().equals(member.travelerId())) {
             throw new NotThePhotosUploaderException();

@@ -6,7 +6,6 @@ import {
   tabLabel,
   tabEmptyCopy,
   showsCreateBar,
-  showsArchivedLink,
   tripsInTab,
   tripCardSubline,
 } from '../src/itineraries/tripTabs';
@@ -59,14 +58,6 @@ describe('the Trips tabs (S4.26, canvas C1)', () => {
     expect(rows.map((t) => t.id)).toEqual(['first', 'second']);
   });
 
-  it('keeps an archived trip out of every tab — a different axis, never a bucket here', () => {
-    const rows = [trip({ id: 'live' }), trip({ id: 'filed', archived: true })];
-
-    TRIP_TABS.forEach((tab) =>
-      expect(tripsInTab(rows, tab).map((t) => t.id)).not.toContain('filed'),
-    );
-    expect(tripsInTab(rows, 'upcoming').map((t) => t.id)).toEqual(['live']);
-  });
 });
 
 
@@ -93,10 +84,6 @@ describe('adaptive landing (canvas C2)', () => {
     );
   });
 
-  it('never counts an archived trip as an ongoing one', () => {
-    expect(landingTab([trip({ state: 'ongoing', archived: true })], null)).toBe('upcoming');
-  });
-
   it('lets a manual pick win over the adaptive rule for the rest of the session', () => {
     const rows = [trip({ state: 'ongoing' })];
 
@@ -120,7 +107,7 @@ describe('per-tab empty copy (canvas C4)', () => {
 });
 
 
-describe('the create bar and the archived link (canvas C4, C6)', () => {
+describe('the create bar (canvas C4)', () => {
   it('rides the Upcoming tab always — populated and empty alike', () => {
     expect(showsCreateBar('upcoming')).toBe(true);
   });
@@ -130,15 +117,6 @@ describe('the create bar and the archived link (canvas C4, C6)', () => {
     expect(showsCreateBar('completed')).toBe(false);
   });
 
-  it('opens the archived list from Completed alone — archives come off the end of the lifecycle', () => {
-    expect(showsArchivedLink('completed')).toBe(true);
-    expect(showsArchivedLink('upcoming')).toBe(false);
-    expect(showsArchivedLink('ongoing')).toBe(false);
-  });
-
-  it('puts creation and the archive on different tabs — they never share one', () => {
-    TRIP_TABS.forEach((tab) => expect(showsCreateBar(tab) && showsArchivedLink(tab)).toBe(false));
-  });
 });
 
 

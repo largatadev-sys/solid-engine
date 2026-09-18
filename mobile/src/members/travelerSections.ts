@@ -5,7 +5,7 @@ import type {
 } from '../types/api';
 
 
-export type TripPosture = 'open' | 'published' | 'archived';
+export type TripPosture = 'open' | 'published';
 
 export const OWNER_SUB = 'Trip owner';
 

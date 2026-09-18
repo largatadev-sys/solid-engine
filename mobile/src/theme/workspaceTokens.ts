@@ -496,7 +496,6 @@ export const tripTabColors = {
   hairline: '#E2E4E8',
   advisoryDot: '#D97706',
   advisoryText: '#B45309',
-  archivedLink: '#5C6470',
 } as const;
 
 
@@ -504,7 +503,6 @@ export const tripTabTypography = {
   label: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 18, fontWeight: '400' },
   labelActive: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
   empty: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20, fontWeight: '400' },
-  archivedLink: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 16, fontWeight: '600' },
 } as const;
 
 
@@ -790,7 +788,6 @@ export const chatMotion = {
 export const chatCopy = {
   placeholder: 'Message…',
   empty: 'Say hello — the plan starts here.',
-  archived: 'This trip is archived — chat is closed.',
   failed: "Couldn't send",
   retry: 'Retry',
   discard: 'Discard',

@@ -74,17 +74,18 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
     @Test
     void publishingIsWhatFreezesThePlan_notAnyLifecycleRung() {
         bothSessionAndSaveRefuseWith(
-                "publish", "ITINERARY_PUBLISHED", "start", "complete");
+                "publish", 409, "ITINERARY_PUBLISHED", "start", "complete");
     }
 
 
     @Test
     void archivingFreezesEveryRungToo_includingTheOnesEditingInPlaceOpened() {
-        bothSessionAndSaveRefuseWith("archive", "TRIP_ARCHIVED", "start");
+        bothSessionAndSaveRefuseWith("archive", 404, "ITINERARY_NOT_FOUND", "start");
     }
 
 
-    private void bothSessionAndSaveRefuseWith(String fenceAct, String code, String... ladder) {
+    private void bothSessionAndSaveRefuseWith(
+            String fenceAct, int status, String code, String... ladder) {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
         UUID dayOne = rig.dayAt(tripId, 1);
@@ -93,7 +94,7 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
         rig.hold(owner, tripId, "session", null);
         walk(owner, tripId, fenceAct);
 
-        assertThat(refusalCode(rig.acquire(owner, tripId, "session", null)))
+        assertThat(refusalCode(rig.acquire(owner, tripId, "session", null), status))
                 .as("the session is refused once %s has frozen the trip", fenceAct)
                 .isEqualTo(code);
         assertThat(
@@ -101,15 +102,16 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
                                 savePlan(
                                         owner,
                                         tripId,
-                                        planWithOneDayTitled(base, dayOne, "Into a frozen trip"))))
+                                        planWithOneDayTitled(base, dayOne, "Into a frozen trip")),
+                                status))
                 .as("and so is the save, from a session taken before the freeze")
                 .isEqualTo(code);
     }
 
 
-    private static String refusalCode(RestTestClient.ResponseSpec response) {
+    private static String refusalCode(RestTestClient.ResponseSpec response, int status) {
         return TripRig.fieldIn(
-                response.expectStatus().isEqualTo(409).expectBody().returnResult().getResponseBodyContent(),
+                response.expectStatus().isEqualTo(status).expectBody().returnResult().getResponseBodyContent(),
                 "code");
     }
 

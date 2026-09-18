@@ -153,7 +153,7 @@ class ItineraryPageIT extends PostgresTestBase {
 
 
     @Test
-    void archivingHidesThePageFromEveryoneButTheOwnerAndUnarchivingBringsItBack() {
+    void deletingTheTripHidesItsPageFromEverybody_theOwnerIncluded_andUndoBringsItBack() {
         String owner = rig.travelerWithHandle(handle());
         String stranger = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
@@ -163,10 +163,11 @@ class ItineraryPageIT extends PostgresTestBase {
         archive(owner, trip);
 
         readRaw(stranger, objectId).expectStatus().isNotFound();
-        page(owner, objectId).jsonPath("$.id").isEqualTo(objectId);
+        readRaw(owner, objectId).expectStatus().isNotFound();
 
         unarchive(owner, trip);
         page(stranger, objectId).jsonPath("$.id").isEqualTo(objectId);
+        page(owner, objectId).jsonPath("$.id").isEqualTo(objectId);
     }
 
 

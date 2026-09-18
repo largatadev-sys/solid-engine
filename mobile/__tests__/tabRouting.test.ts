@@ -322,13 +322,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(trips).not.toMatch(/addPastTrip/);
   });
 
-  it('opens the archived-trips door from the Completed tab alone (S4.26, canvas C6)', () => {
+  it('offers no archived-trips door at all — TW-2 made archive the implementation of Delete', () => {
     const trips = read(TRIPS_GROUP, 'trips.tsx');
 
-    expect(trips).toMatch(/Archived trips/);
-    expect(trips).toMatch(/itineraries\/archived/);
-    expect(trips).toContain('showsArchivedLink(');
-    expect(existsSync(join(TRIPS, 'archived.tsx'))).toBe(true);
+    expect(trips).not.toMatch(/Archived trips/);
+    expect(trips).not.toMatch(/itineraries\/archived/);
+    expect(trips).not.toContain('showsArchivedLink(');
+    expect(existsSync(join(TRIPS, 'archived.tsx')))
+      .toBe(false);
   });
 
   it('puts the mail icon where the search stub was, and opens Requests with it (S4.41)', () => {
@@ -732,26 +733,15 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
   it('opens EVERY own unpublished trip in the Trip Workspace, whatever its state (S4.17 decision 1)', () => {
     for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
       expect(
-        tripRowDestination({ id: 'trip-1', archived: false, published: false, state }).pathname,
+        tripRowDestination({ id: 'trip-1', published: false, state }).pathname,
       ).toBe('/itineraries/[id]');
     }
   });
 
   it('keeps a published trip on its published view — the workspace is for unpublished trips', () => {
     expect(
-      tripRowDestination({ id: 'trip-1', archived: false, published: true, state: 'completed' })
-        .pathname,
+      tripRowDestination({ id: 'trip-1', published: true, state: 'completed' }).pathname,
     ).toBe('/published/[id]');
-  });
-
-  it('lets ARCHIVED win over everything — an archived trip has no public page, and no flow to rejoin', () => {
-    expect(
-      tripRowDestination({ id: 'trip-1', archived: true, published: true, state: 'completed' })
-        .pathname,
-    ).toBe('/itineraries/[id]');
-    expect(
-      tripRowDestination({ id: 'trip-1', archived: true, published: false, state: 'upcoming' }).pathname,
-    ).toBe('/itineraries/[id]');
   });
 
   it('the activity form picks a time rather than asking anyone to type one', () => {
@@ -1082,7 +1072,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
     expect(workspace).toContain("actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}");
     expect(workspace).toContain("pathname: '/itineraries/[id]/edit-plan'");
-    expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId)');
+    expect(workspace).toContain('editItineraryAction(data, myId)');
   });
 
   it('never reopens from any surface — Step back retired and no CTA replaced it (S4.26 decision 10)', () => {

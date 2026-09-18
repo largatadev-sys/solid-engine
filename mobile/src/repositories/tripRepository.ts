@@ -25,14 +25,9 @@ import type { PickedPhoto } from '../media/pickedPhoto';
 
 export const tripRepository = {
 
-  async fetchMine(
-    cursor?: string,
-    archived = false,
-    category?: TripCategory,
-  ): Promise<Page<ItineraryResponse>> {
+  async fetchMine(cursor?: string, category?: TripCategory): Promise<Page<ItineraryResponse>> {
     const params = [
       ...(cursor !== undefined ? [`cursor=${encodeURIComponent(cursor)}`] : []),
-      ...(archived ? ['archived=true'] : []),
       ...(category !== undefined ? [`category=${encodeURIComponent(category)}`] : []),
     ];
     return apiClient.get<Page<ItineraryResponse>>(

@@ -29,6 +29,13 @@ class TripModuleBoundaryTest {
 
     private static final String[] FRONT_DOOR = {PUBLISHED_CONTRACT, TRIP + ".exception.."};
 
+    private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
+            resideInAPackage("com.largata..")
+                    .and(not(resideInAPackage(TRIP + "..")))
+                    .and(not(resideInAPackage("com.largata.common..")))
+                    .and(not(resideInAPackage("com.largata.identity..")))
+                    .and(not(resideInAPackage("com.largata.media..")));
+
     private static final List<String> THE_SLICES =
             List.of(
                     "trip", "plan", "editing", "history", "cover", "dump", "fork", "workspace",
@@ -60,6 +67,24 @@ class TripModuleBoundaryTest {
     }
 
     @Test
+    void theTripModuleReachesOnlyWhatItIsAllowedTo() {
+        noClasses()
+                .that()
+                .resideInAPackage(TRIP + "..")
+                .should()
+                .dependOnClassesThat(A_MODULE_IT_MAY_NOT_NAME)
+                .as("born at TW-2, and the measurement is the point: trip reaches common, identity"
+                        + " and media — and NOTHING else. It names no other module because the facts"
+                        + " it needs from elsewhere arrive through ports it DECLARES and somebody"
+                        + " else implements (ArchiveState, PublicationState), which is what keeps the"
+                        + " graph acyclic while the fence still knows whether a plan is frozen. An"
+                        + " entry added here is trip reaching outward for the first time, and it"
+                        + " should be argued rather than appended")
+                .check(largata);
+    }
+
+
+    @Test
     void theModulesOwnApiPackageDependsOnNothingBehindIt() {
         noClasses()
                 .that()
@@ -84,6 +109,9 @@ class TripModuleBoundaryTest {
                 .isNotEmpty();
         assertThat(largata.that(resideInAnyPackage(FRONT_DOOR)))
                 .as("and a front door matching nothing would make the rules unfalsifiable")
+                .isNotEmpty();
+        assertThat(largata.that(A_MODULE_IT_MAY_NOT_NAME))
+                .as("…and an outbound allowlist that forbids nothing would pass while guarding nothing")
                 .isNotEmpty();
     }
 

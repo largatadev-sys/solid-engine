@@ -267,33 +267,30 @@ describe('submitButtonFor — one button, one label, never relabeled (v2 contrac
 
 describe('footerActionsFor — two inline actions, no menu of any kind (v2 contract)', () => {
   it('gives the creator both actions while the poll is open', () => {
-    expect(footerActionsFor(poll({ mine: true }), false, false)).toEqual(['close', 'delete']);
+    expect(footerActionsFor(poll({ mine: true }), false)).toEqual(['close', 'delete']);
   });
 
   it('gives the trip owner the same, on a poll they did not start', () => {
-    expect(footerActionsFor(poll({ mine: false }), true, false)).toEqual(['close', 'delete']);
+    expect(footerActionsFor(poll({ mine: false }), true)).toEqual(['close', 'delete']);
   });
 
   it('gives a plain member nothing — no footer at all', () => {
-    expect(footerActionsFor(poll({ mine: false }), false, false)).toEqual([]);
+    expect(footerActionsFor(poll({ mine: false }), false)).toEqual([]);
   });
 
   it('offers Delete only once the poll has closed', () => {
-    expect(footerActionsFor(poll({ status: 'closed', mine: true }), false, false)).toEqual(['delete']);
+    expect(footerActionsFor(poll({ status: 'closed', mine: true }), false)).toEqual(['delete']);
   });
 
-  it('offers nothing on an archived trip, the owner included', () => {
-    expect(footerActionsFor(poll({ mine: true }), true, true)).toEqual([]);
-  });
 });
 
-describe('boardIsWritable — the board is live until the trip is archived', () => {
+describe('boardIsWritable — a reachable trip is always writable (TW-2)', () => {
   it('lets every member create and vote on a live trip, not just the owner', () => {
-    expect(boardIsWritable(false)).toBe(true);
+    expect(boardIsWritable()).toBe(true);
   });
 
-  it('offers no creation and no voting on an archived trip', () => {
-    expect(boardIsWritable(true)).toBe(false);
+  it('stays writable whatever else is true — a DELETED trip 404s before the board is read', () => {
+    expect(boardIsWritable()).toBe(true);
   });
 });
 

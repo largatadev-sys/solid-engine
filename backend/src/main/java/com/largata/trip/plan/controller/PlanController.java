@@ -1,7 +1,8 @@
 package com.largata.trip.plan.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.plan.service.PlanSaveService;
@@ -24,11 +25,17 @@ class PlanController {
     private final PlanSaveService plans;
     private final TripService itineraries;
     private final AuthorizationGuard guard;
+    private final TripFence fence;
 
-    PlanController(PlanSaveService plans, TripService itineraries, AuthorizationGuard guard) {
+    PlanController(
+            PlanSaveService plans,
+            TripService itineraries,
+            AuthorizationGuard guard,
+            TripFence fence) {
         this.plans = plans;
         this.itineraries = itineraries;
         this.guard = guard;
+        this.fence = fence;
     }
 
     @PutMapping
@@ -37,7 +44,7 @@ class PlanController {
             @PathVariable UUID itineraryId,
             @Valid @RequestBody SavePlanRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        plans.save(member, request);
+        plans.save(fence.editable(member), request);
         return TripResponse.of(itineraries.viewPlan(member));
     }
 }

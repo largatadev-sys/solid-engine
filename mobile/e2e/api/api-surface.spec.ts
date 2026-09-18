@@ -498,10 +498,10 @@ test('S4.23 a member writing an archived trip gets the MASK, not the freeze (404
   expect(memberWrites.body.code).toBe('ITINERARY_NOT_FOUND');
 });
 
-test('S1.9 even the owner cannot move the lifecycle (409 TRIP_ARCHIVED)', async () => {
+test('ADR-040 a deleted trip is not found for its owner either (404 ITINERARY_NOT_FOUND)', async () => {
   const ownerStarts = await api(`/v1/trips/${trip}/start`, 'POST', owner);
-  expect(ownerStarts.status).toBe(409);
-  expect(ownerStarts.body.code).toBe('TRIP_ARCHIVED');
+  expect(ownerStarts.status).toBe(404);
+  expect(ownerStarts.body.code).toBe('ITINERARY_NOT_FOUND');
 });
 
 test('S1.9 the archived trip leaves the default list', async () => {
