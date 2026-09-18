@@ -42,9 +42,9 @@ let joined: SeededTrip;
 let ownedTitle: string;
 let joinedTitle: string;
 
-async function isArchived(id: string, token: string): Promise<boolean> {
+async function isDeleted(id: string, token: string): Promise<boolean> {
   const read = await api(`/v1/trips/${id}`, 'GET', token);
-  return read.body?.archived === true;
+  return read.status === 404;
 }
 
 async function amMember(id: string): Promise<boolean> {
@@ -174,11 +174,11 @@ test('the CTA is inert until the acknowledgement is ticked, and Cancel leaves th
 
   await expect(labelled(page, DELETE_TRIP_CTA_LABEL)).toBeDisabled();
   await expect(page.getByText(deleteTripTitle(ownedTitle))).toBeVisible();
-  expect(await isArchived(owned.id, ownerToken)).toBe(false);
+  expect(await isDeleted(owned.id, ownerToken)).toBe(false);
 
   await labelled(page, DELETE_TRIP_CANCEL_LABEL).click();
   await expect(page.getByText(deleteTripTitle(ownedTitle))).toHaveCount(0);
-  expect(await isArchived(owned.id, ownerToken)).toBe(false);
+  expect(await isDeleted(owned.id, ownerToken)).toBe(false);
 });
 
 test('acknowledging and committing deletes the trip, with a toast that OFFERS Undo', async ({
@@ -196,7 +196,7 @@ test('acknowledging and committing deletes the trip, with a toast that OFFERS Un
   await expect(page.getByText(TRIP_DELETED_TOAST)).toBeVisible();
   await expect(labelled(page, UNDO_LABEL)).toHaveCount(1);
 
-  await expect.poll(() => isArchived(owned.id, ownerToken), { timeout: 20_000 }).toBe(true);
+  await expect.poll(() => isDeleted(owned.id, ownerToken), { timeout: 20_000 }).toBe(true);
 });
 
 test('the deleted trip is gone from the owner app entirely — there is no archived list to find it in', async ({

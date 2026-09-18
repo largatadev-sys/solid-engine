@@ -160,18 +160,17 @@ test('publishing never opens the pool to travelers outside the trip', async () =
   expect(strangerAfterPublish.status).toBe(404);
 });
 
-test('an archived trip refuses upload and delete — the fence', async () => {
+test('a DELETED trip is not found for upload and delete, the owner included (ADR-040)', async () => {
   await api(`/v1/trips/${trip}/archive`, 'POST', owner);
-  const archivedUpload = await uploadBytes(dump, owner, solidJpeg(), 'dump.jpg');
-  const archivedDelete = await api(`${dump}/${afterPublish.body.id}`, 'DELETE', owner);
-  expect(archivedUpload.status).toBe(409);
-  expect(archivedDelete.status).toBe(409);
+  const deletedUpload = await uploadBytes(dump, owner, solidJpeg(), 'dump.jpg');
+  const deletedDelete = await api(`${dump}/${afterPublish.body.id}`, 'DELETE', owner);
+  expect(deletedUpload.status).toBe(404);
+  expect(deletedDelete.status).toBe(404);
 });
 
-test('the archived pool stays readable to the owner and masks the member', async () => {
-  const ownerStillReads = await api(dump, 'GET', owner);
-  const memberMasked = await api(dump, 'GET', member);
-  expect(ownerStillReads.status).toBe(200);
-  expect(ownerStillReads.body.items).toHaveLength(1);
-  expect(memberMasked.status).toBe(404);
+test('and the pool itself is masked from everybody, not just the member', async () => {
+  const ownerReads = await api(dump, 'GET', owner);
+  const memberReads = await api(dump, 'GET', member);
+  expect(ownerReads.status).toBe(404);
+  expect(memberReads.status).toBe(404);
 });

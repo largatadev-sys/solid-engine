@@ -360,7 +360,7 @@ test.describe('removal, behind the owner’s confirm', () => {
   });
 });
 
-test.describe('the frozen surface, walked on an archived trip', () => {
+test.describe('the frozen surface, walked on a published trip', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
@@ -374,7 +374,9 @@ test.describe('the frozen surface, walked on an archived trip', () => {
     await api(`/v1/trips/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
       handle: (await profileFor(STRANGER)).handle,
     });
-    await api(`/v1/trips/${trip.id}/archive`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip.id}/start`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip.id}/complete`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip.id}/publish`, 'POST', ownerToken, {});
   });
 
   test('a frozen trip shows the roster and nothing that would change it', async ({

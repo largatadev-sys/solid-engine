@@ -121,7 +121,7 @@ test.describe('the record survives the trip (TW-2 Q17)', () => {
     await api(`/v1/trips/${trip.id}/start`, 'POST', ownerToken, {});
     await api(`/v1/trips/${trip.id}/complete`, 'POST', ownerToken, {});
     const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', ownerToken, {});
-    expect(published.status).toBe(201);
+    expect(published.status).toBe(200);
     const objectId = published.body.id as string;
 
     await deleteTrip(trip.id);
@@ -139,7 +139,7 @@ test.describe('a published trip still refuses a plan write, whoever asks', () =>
     const trip = await tripFor('published and frozen');
     await api(`/v1/trips/${trip.id}/start`, 'POST', ownerToken, {});
     await api(`/v1/trips/${trip.id}/complete`, 'POST', ownerToken, {});
-    expect((await api(`/v1/trips/${trip.id}/publish`, 'POST', ownerToken, {})).status).toBe(201);
+    expect((await api(`/v1/trips/${trip.id}/publish`, 'POST', ownerToken, {})).status).toBe(200);
 
     const write = await api(`/v1/trips/${trip.id}/edit-lock`, 'POST', memberToken, {});
 
