@@ -171,9 +171,4 @@ class TripFactsService implements TripApi {
     }
 
 
-    @Transactional(readOnly = true)
-    public boolean frozen(UUID tripId) {
-        return workspaces.isArchived(tripId);
-    }
-
 }

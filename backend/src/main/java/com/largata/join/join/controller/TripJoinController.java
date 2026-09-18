@@ -47,7 +47,12 @@ class TripJoinController {
             @CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
         return Page.exhausted(
-                join.queueFor(theOwnerOfTheQueue(membership)).stream()
+                join.queueFor(
+                                fence.membershipMutable(
+                                        fence.owner(
+                                                membership,
+                                                NotTheTripOwnerException::toReadTheJoinQueue)))
+                        .stream()
                         .map(JoinRequestSummaryResponse::of)
                         .toList());
     }
@@ -71,12 +76,6 @@ class TripJoinController {
             @PathVariable UUID requestId) {
         join.decline(theOwnerAnswering(guard.requireMember(traveler.id(), itineraryId)), requestId);
     }
-
-    private TripFence.MembershipMutable<Owner> theOwnerOfTheQueue(Membership membership) {
-        return fence.membershipMutable(
-                fence.owner(membership, NotTheTripOwnerException::toReadTheJoinQueue));
-    }
-
 
     private TripFence.MembershipMutable<Owner> theOwnerAnswering(Membership membership) {
         return fence.membershipMutable(

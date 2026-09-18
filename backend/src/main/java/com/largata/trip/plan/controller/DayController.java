@@ -66,9 +66,6 @@ class DayController {
 
     private TripFence.Editable<Owner> theOwnerEditing(Traveler traveler, UUID itineraryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return fence.editable(
-                fence.owner(
-                        member,
-                        () -> new NotTheTripOwnerException("Only the trip owner can add or remove days.")));
+        return fence.editable(fence.owner(member, NotTheTripOwnerException::toAddOrRemoveDays));
     }
 }

@@ -103,11 +103,7 @@ class TripController {
             @Valid @RequestBody UpdateTripRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.editFields(
-                fence.editable(
-                        fence.owner(
-                                membership,
-                                () -> new NotTheTripOwnerException(
-                                        "Only the trip owner can edit the trip's details."))),
+                fence.editable(fence.owner(membership, NotTheTripOwnerException::toEditTheTripsDetails)),
                 request::mergeOnto);
         var plan = itineraries.viewPlan(membership);
         return TripResponse.of(plan);

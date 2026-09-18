@@ -20,14 +20,14 @@ class AudienceFenceCoverageTest {
     private static final Path CONTROLLERS = Path.of("src/main/java/com/largata");
 
 
-    private static final Set<String> OWNER_ONLY_OR_DELIBERATELY_UNFENCED =
-            Set.of("preview", "listMine");
+    private static final Set<String> OPENS_A_ROOM_CHECKING_DOOR =
+            Set.of("inAudience(", "writable(", "editable(", "membershipMutable(", "fence.owner(");
 
 
-    private static final Set<String> MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE =
-            Set.of(
-                    "TripJoinController.java#link",
-                    "TripJoinController.java#queue");
+    private static final Set<String> OWNER_ONLY_OR_DELIBERATELY_UNFENCED = Set.of("listMine");
+
+
+    private static final Set<String> MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE = Set.of();
 
 
     private static final Map<String, String> CAPABILITY_SCOPED_COVER_READS =
@@ -80,7 +80,7 @@ class AudienceFenceCoverageTest {
 
         for (ScannedHandler handler : scannedHandlers()) {
             if (handler.body().contains("requireInAudience")
-                    || handler.body().contains("inAudience(")
+                    || OPENS_A_ROOM_CHECKING_DOOR.stream().anyMatch(handler.body()::contains)
                     || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())
                     || MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE.contains(handler.qualifiedName())) {
                 continue;
@@ -91,8 +91,8 @@ class AudienceFenceCoverageTest {
         assertThat(unfenced)
                 .as(
                         "ADR-017: archived trips are owner-only sight. A workspace-scoped GET that resolves a "
-                                + "membership must open the fence's inAudience door (or the old "
-                                + "AudienceFence.requireInAudience, which now delegates to it) or be named in the "
+                                + "membership must open one of the fence's ROOM-CHECKING doors — every "
+                                + "one of them refuses a deleted trip before it asks anything else — or be named in the "
                                 + "exception set with a reason — S4.1 shipped this fence at two of its three "
                                 + "doors, and only a review caught the third")
                 .isEmpty();

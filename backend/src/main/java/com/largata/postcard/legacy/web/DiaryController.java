@@ -1,7 +1,7 @@
 package com.largata.postcard.legacy.web;
 
 import com.largata.common.api.Page;
-import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
 import com.largata.identity.Traveler;
@@ -37,14 +37,14 @@ class DiaryController {
 
     private final DiaryService diary;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
     private final ObjectMapper json;
 
     DiaryController(
-            DiaryService diary, AuthorizationGuard guard, AudienceFence audience, ObjectMapper json) {
+            DiaryService diary, AuthorizationGuard guard, TripFence fence, ObjectMapper json) {
         this.diary = diary;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
         this.json = json;
     }
 
@@ -60,7 +60,7 @@ class DiaryController {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         PostDiaryEntryRequest entry = json.readValue(entryJson, PostDiaryEntryRequest.class);
         return diary.post(
-                member,
+                fence.writable(member),
                 entry.activityId(),
                 entry.caption(),
                 entry.fromDump(),
@@ -75,7 +75,7 @@ class DiaryController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.mine(audience.requireInAudience(member), cursor, limit);
+        return diary.mine(fence.inAudience(member), cursor, limit);
     }
 
 
@@ -85,7 +85,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.mineById(audience.requireInAudience(member), entryId);
+        return diary.mineById(fence.inAudience(member), entryId);
     }
 
 
@@ -96,7 +96,7 @@ class DiaryController {
             @PathVariable UUID entryId,
             @RequestBody UpdateDiaryEntryRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.recaption(member, entryId, request.caption());
+        return diary.recaption(fence.writable(member), entryId, request.caption());
     }
 
 
@@ -109,7 +109,7 @@ class DiaryController {
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.addDevicePhoto(member, entryId, photo.getBytes());
+        return diary.addDevicePhoto(fence.writable(member), entryId, photo.getBytes());
     }
 
 
@@ -121,7 +121,7 @@ class DiaryController {
             @PathVariable UUID entryId,
             @RequestBody AddDiaryPhotoFromDumpRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.addPhotoFromDump(member, entryId, request.photoId());
+        return diary.addPhotoFromDump(fence.writable(member), entryId, request.photoId());
     }
 
 
@@ -133,7 +133,7 @@ class DiaryController {
             @PathVariable UUID entryId,
             @PathVariable UUID photoId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        diary.removePhoto(member, entryId, photoId);
+        diary.removePhoto(fence.writable(member), entryId, photoId);
     }
 
 
@@ -144,7 +144,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        diary.delete(member, entryId);
+        diary.delete(fence.writable(member), entryId);
     }
 
 

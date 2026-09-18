@@ -51,9 +51,7 @@ class ItineraryController {
         ItineraryObject published =
                 itineraries.publish(
                         fence.writable(
-                                theOwner(
-                                        requireMember(traveler, tripId),
-                                        "Only the trip owner can publish this trip.")));
+                                theOwner(traveler, tripId, NotTheTripOwnerException::toPublishTheTrip)));
         return ItineraryObjectResponse.of(published, itineraries.planTreeOf(published));
     }
 
@@ -63,9 +61,7 @@ class ItineraryController {
     void unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
         itineraries.unpublish(
                 fence.writable(
-                        theOwner(
-                                requireMember(traveler, tripId),
-                                "Only the trip owner can unpublish this trip.")));
+                        theOwner(traveler, tripId, NotTheTripOwnerException::toUnpublishTheTrip)));
     }
 
 
@@ -84,7 +80,10 @@ class ItineraryController {
                 traveler.id(),
                 itineraries.snapshotOfLivePlan(
                         fence.inAudience(
-                                theOwner(owner, "Only the trip owner can preview the published page."))));
+                                theOwner(
+                                        traveler,
+                                        tripId,
+                                        NotTheTripOwnerException::toPreviewThePublishedPage))));
     }
 
 
@@ -115,7 +114,8 @@ class ItineraryController {
         return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
     }
 
-    private Owner theOwner(Membership membership, String refusal) {
-        return fence.owner(membership, () -> new NotTheTripOwnerException(refusal));
+    private Owner theOwner(
+            Traveler traveler, UUID tripId, java.util.function.Supplier<NotTheTripOwnerException> refusal) {
+        return fence.owner(requireMember(traveler, tripId), refusal);
     }
 }

@@ -36,6 +36,36 @@ public final class NotTheTripOwnerException extends ForbiddenException {
     }
 
 
+    public static NotTheTripOwnerException toEditTheTripsDetails() {
+        return new NotTheTripOwnerException("Only the trip owner can edit the trip's details.");
+    }
+
+
+    public static NotTheTripOwnerException toAddOrRemoveDays() {
+        return new NotTheTripOwnerException("Only the trip owner can add or remove days.");
+    }
+
+
+    public static NotTheTripOwnerException toDeleteTheTrip() {
+        return new NotTheTripOwnerException("Only the trip owner can delete this trip.");
+    }
+
+
+    public static NotTheTripOwnerException toPublishTheTrip() {
+        return new NotTheTripOwnerException("Only the trip owner can publish this trip.");
+    }
+
+
+    public static NotTheTripOwnerException toUnpublishTheTrip() {
+        return new NotTheTripOwnerException("Only the trip owner can unpublish this trip.");
+    }
+
+
+    public static NotTheTripOwnerException toPreviewThePublishedPage() {
+        return new NotTheTripOwnerException("Only the trip owner can preview the published page.");
+    }
+
+
     public static NotTheTripOwnerException toReadTheJoinQueue() {
         return new NotTheTripOwnerException("Only the trip owner can see who has asked to join.");
     }

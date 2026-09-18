@@ -32,9 +32,7 @@ class TripDestructionController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void destroy(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
         trips.destroy(
-                Owner.of(
-                        requireMember(traveler, tripId),
-                        () -> new NotTheTripOwnerException("Only the trip owner can delete this trip.")));
+                Owner.of(requireMember(traveler, tripId), NotTheTripOwnerException::toDeleteTheTrip));
     }
 
 
