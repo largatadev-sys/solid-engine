@@ -6,7 +6,6 @@ import { PhotoDumpPreview } from '../media/PhotoDumpPreview';
 import { flattenPhotoDumpPages, photoDumpTiles } from '../media/photoDumpGrid';
 import {
   PHOTO_DUMP_ADD_LABEL,
-  PHOTO_DUMP_ARCHIVED_NOTE,
   PHOTO_DUMP_EMPTY_BODY,
   PHOTO_DUMP_EMPTY_TITLE,
   PHOTO_DUMP_LOAD_FAILURE,
@@ -32,7 +31,6 @@ interface WorkspacePhotoDumpTabProps {
   readonly itineraryId: string;
   readonly myId: string | undefined;
   readonly isOwner: boolean;
-  readonly archived: boolean;
 }
 
 
@@ -40,7 +38,6 @@ export function WorkspacePhotoDumpTab({
   itineraryId,
   myId,
   isOwner,
-  archived,
 }: WorkspacePhotoDumpTabProps) {
   const pool = usePhotoDump(itineraryId);
   const add = useAddPhotoDumpEntries(itineraryId);
@@ -65,7 +62,7 @@ export function WorkspacePhotoDumpTab({
   }
 
   const photos = flattenPhotoDumpPages(pool.data?.pages);
-  const tiles = photoDumpTiles(photos, myId, isOwner, archived);
+  const tiles = photoDumpTiles(photos, myId, isOwner);
   const busy = add.isPending || remove.isPending;
   const opened = tiles.find((tile) => tile.photo.id === openedId) ?? null;
 
@@ -78,13 +75,11 @@ export function WorkspacePhotoDumpTab({
 
   return (
     <View style={styles.body}>
-      {archived && <Text style={styles.notice}>{PHOTO_DUMP_ARCHIVED_NOTE}</Text>}
-
       {photoAction.failure !== undefined && (
         <Text style={styles.failure}>{photoAction.failure}</Text>
       )}
 
-      {tiles.length === 0 && !archived && (
+      {tiles.length === 0 && (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>{PHOTO_DUMP_EMPTY_TITLE}</Text>
           <Text style={styles.emptyBody}>{PHOTO_DUMP_EMPTY_BODY}</Text>
@@ -108,21 +103,19 @@ export function WorkspacePhotoDumpTab({
           </Pressable>
         ))}
 
-        {!archived && (
-          <Pressable
-            style={styles.addTile}
-            disabled={busy}
-            onPress={() =>
-              void photoAction.pickManyAndRun(PHOTO_DUMP_BATCH_LIMIT, (photos) =>
-                add.mutateAsync(photos),
-              )
-            }
-            accessibilityRole="button"
-            accessibilityLabel={PHOTO_DUMP_ADD_LABEL}
-          >
-            <Text style={styles.addLabel}>{busy ? '…' : PHOTO_DUMP_ADD_LABEL}</Text>
-          </Pressable>
-        )}
+        <Pressable
+          style={styles.addTile}
+          disabled={busy}
+          onPress={() =>
+            void photoAction.pickManyAndRun(PHOTO_DUMP_BATCH_LIMIT, (photos) =>
+              add.mutateAsync(photos),
+            )
+          }
+          accessibilityRole="button"
+          accessibilityLabel={PHOTO_DUMP_ADD_LABEL}
+        >
+          <Text style={styles.addLabel}>{busy ? '…' : PHOTO_DUMP_ADD_LABEL}</Text>
+        </Pressable>
       </View>
 
       <PhotoDumpPreview

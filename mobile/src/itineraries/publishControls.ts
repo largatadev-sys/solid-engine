@@ -5,10 +5,10 @@ export type PublishControl = 'publish' | 'unpublish';
 
 
 export function publishControl(
-  itinerary: Pick<ItineraryResponse, 'published' | 'archived'>,
+  itinerary: Pick<ItineraryResponse, 'published'>,
   isOwner: boolean,
 ): PublishControl | null {
-  if (!isOwner || itinerary.archived) return null;
+  if (!isOwner) return null;
   return itinerary.published ? 'unpublish' : 'publish';
 }
 
@@ -18,8 +18,8 @@ export function isPublished(itinerary: Pick<ItineraryResponse, 'published'>): bo
 }
 
 
-export function isEditable(itinerary: Pick<ItineraryResponse, 'published' | 'archived'>): boolean {
-  return !itinerary.archived && !itinerary.published;
+export function isEditable(itinerary: Pick<ItineraryResponse, 'published'>): boolean {
+  return !itinerary.published;
 }
 
 

@@ -23,6 +23,7 @@ export const ITINERARY_REPUBLISHED_TOAST = 'Itinerary republished';
 export const LEFT_TRIP_TOAST = 'Left the trip';
 export const BACK_IN_TRIP_TOAST = 'You are back in the trip';
 export const TRIP_DELETED_TOAST = 'Trip deleted';
+export const TRIP_RESTORED_TOAST = 'Trip restored';
 
 export const REMOVAL_FAILED_TOAST = 'That did not go through — nothing was changed';
 

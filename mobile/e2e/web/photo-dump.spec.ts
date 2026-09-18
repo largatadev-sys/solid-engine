@@ -15,7 +15,6 @@ import {
 import { labelled } from '../support/screen';
 import {
   PHOTO_DUMP_ADD_LABEL,
-  PHOTO_DUMP_ARCHIVED_NOTE,
   PHOTO_DUMP_EMPTY_BODY,
   PHOTO_DUMP_EMPTY_TITLE,
   PHOTO_DUMP_PREVIEW_CLOSE_LABEL,
@@ -194,21 +193,20 @@ test.describe('paging through the tab\'s own control', () => {
   });
 });
 
-test('an archived trip tells the owner the pool is read-only and hides the add tile', async ({
+test('a DELETED trip has no photo pool to read — it is not found for its owner too (ADR-040)', async ({
   page,
 }) => {
-  const archived = await seedTrip({
+  const deleted = await seedTrip({
     ownerTag: OWNER,
-    title: stamp('Photo dump archived'),
+    title: stamp('Photo dump deleted'),
     durationDays: 2,
   });
-  await uploadPhoto(`/v1/trips/${archived.id}/photo-dump`, token);
-  await api(`/v1/trips/${archived.id}/archive`, 'POST', token, {});
+  await uploadPhoto(`/v1/trips/${deleted.id}/photo-dump`, token);
+  await api(`/v1/trips/${deleted.id}/archive`, 'POST', token, {});
 
-  await page.goto(dumpRoute(archived.id));
-
-  await expect(page.getByText(PHOTO_DUMP_ARCHIVED_NOTE)).toBeVisible();
-  await expect(labelled(page, PHOTO_DUMP_ADD_LABEL)).toHaveCount(0);
+  const read = await api(`/v1/trips/${deleted.id}/photo-dump`, 'GET', token);
+  expect(read.status).toBe(404);
+  expect(read.body?.code).toBe('ITINERARY_NOT_FOUND');
 });
 
 test('a published trip still takes photos on the wire, though the workspace redirects its tab', async ({

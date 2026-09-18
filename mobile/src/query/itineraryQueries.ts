@@ -41,8 +41,8 @@ export const itineraryKeys = {
   all: ['itineraries'] as const,
 
   lists: () => [...itineraryKeys.all, 'list'] as const,
-  list: (archived = false, category?: TripCategory) =>
-    [...itineraryKeys.lists(), { archived, category: category ?? null }] as const,
+  list: (category?: TripCategory) =>
+    [...itineraryKeys.lists(), { category: category ?? null }] as const,
   one: (id: string) => [...itineraryKeys.all, 'one', id] as const,
 
   published: (id: string) => [...itineraryKeys.all, 'published', id] as const,
@@ -55,9 +55,9 @@ export const itineraryKeys = {
 
 export function myItinerariesOptionsFor(category?: TripCategory) {
   return infiniteQueryOptions({
-    queryKey: itineraryKeys.list(false, category),
+    queryKey: itineraryKeys.list(category),
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      tripRepository.fetchMine(pageParam, false, category),
+      tripRepository.fetchMine(pageParam, category),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
   });
@@ -65,15 +65,6 @@ export function myItinerariesOptionsFor(category?: TripCategory) {
 
 
 export const myItinerariesOptions = myItinerariesOptionsFor(undefined);
-
-
-export const archivedItinerariesOptions = infiniteQueryOptions({
-  queryKey: itineraryKeys.list(true),
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-    tripRepository.fetchMine(pageParam, true),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
-});
 
 
 export function itineraryOptions(id: string, client: QueryClient) {
@@ -274,12 +265,6 @@ export function useTripLifecycle(id: string): UseMutationResult<ItineraryRespons
     },
   });
 }
-
-export function useArchivedItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
-  const { kind } = useAuth();
-  return useInfiniteQuery({ ...archivedItinerariesOptions, enabled: kind === 'signedIn' });
-}
-
 
 export function useAppendDay(itineraryId: string): UseMutationResult<DayResponse, Error, { title?: string }> {
   const client = useQueryClient();

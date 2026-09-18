@@ -242,3 +242,31 @@ describe('a plain toast carries no undo and supersedes a pending removal', () =>
     expect(plain.queue.pending).toBeNull();
   });
 });
+
+
+describe('deleting a trip is undoable (TW-2: archive IS the implementation of Delete)', () => {
+  it('offers Undo on the toast and holds the removal pending', () => {
+    const deleted = requested(emptyUndoQueue(), {
+      subjectId: 'trip-9',
+      kind: 'deleteTrip',
+      message: 'Trip deleted',
+    });
+
+    expect(deleted.queue.toast?.undoable).toBe(true);
+    expect(deleted.queue.pending?.subjectId).toBe('trip-9');
+  });
+
+  it('says the trip is restored when Undo is taken, and reverts nothing twice', () => {
+    const deleted = requested(emptyUndoQueue(), {
+      subjectId: 'trip-9',
+      kind: 'deleteTrip',
+      message: 'Trip deleted',
+      deferred: false,
+    });
+    const undone = cancelled(deleted.queue, deleted.queue.pending!.token);
+
+    expect(undone.queue.toast?.message).toBe('Trip restored');
+    expect(undone.reverts).toMatchObject([{ subjectId: 'trip-9', kind: 'deleteTrip' }]);
+    expect(undone.queue.pending).toBeNull();
+  });
+});

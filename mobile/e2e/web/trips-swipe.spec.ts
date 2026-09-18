@@ -181,7 +181,7 @@ test('the CTA is inert until the acknowledgement is ticked, and Cancel leaves th
   expect(await isArchived(owned.id, ownerToken)).toBe(false);
 });
 
-test('acknowledging and committing archives the trip, with a plain toast and no undo', async ({
+test('acknowledging and committing deletes the trip, with a toast that OFFERS Undo', async ({
   signIn,
   page,
 }) => {
@@ -194,22 +194,20 @@ test('acknowledging and committing archives the trip, with a plain toast and no 
   await labelled(page, DELETE_TRIP_CTA_LABEL).click();
 
   await expect(page.getByText(TRIP_DELETED_TOAST)).toBeVisible();
-  await expect(labelled(page, UNDO_LABEL)).toHaveCount(0);
+  await expect(labelled(page, UNDO_LABEL)).toHaveCount(1);
 
   await expect.poll(() => isArchived(owned.id, ownerToken), { timeout: 20_000 }).toBe(true);
 });
 
-test('the archived trip lives in Archived trips, and nowhere else in the owner app', async ({
+test('the deleted trip is gone from the owner app entirely — there is no archived list to find it in', async ({
   signIn,
   page,
 }) => {
   await signIn(OWNER);
-  await page.goto('/itineraries/archived');
-
-  await expect(page.getByText(ownedTitle).first()).toBeVisible({ timeout: 20_000 });
-
   await openTrips(page);
+
   await expect(labelled(page, swipeActionLabel('delete', ownedTitle))).toHaveCount(0);
+  await expect(page.getByText(ownedTitle)).toHaveCount(0);
 });
 
 test('letting the Leave toast expire ends the membership for real, exactly once', async ({

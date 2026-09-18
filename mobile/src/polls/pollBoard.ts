@@ -106,14 +106,13 @@ export function submitButtonFor(
 export function footerActionsFor(
   poll: PollResponse,
   isOwner: boolean,
-  archived: boolean,
 ): PollFooterAction[] {
-  if (archived || !(poll.mine || isOwner)) return [];
+  if (!(poll.mine || isOwner)) return [];
   return isClosed(poll) ? ['delete'] : ['close', 'delete'];
 }
 
-export function boardIsWritable(archived: boolean): boolean {
-  return !archived;
+export function boardIsWritable(): boolean {
+  return true;
 }
 
 

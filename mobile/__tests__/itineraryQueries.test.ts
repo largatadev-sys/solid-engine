@@ -1,6 +1,5 @@
 import { QueryClient, type InfiniteData } from '@tanstack/react-query';
 import {
-  archivedItinerariesOptions,
   findInListCache,
   itineraryKeys,
   itineraryOptions,
@@ -75,7 +74,7 @@ describe('the list', () => {
 
     const data = await freshClient().fetchInfiniteQuery(myItinerariesOptions);
 
-    expect(tripRepository.fetchMine).toHaveBeenCalledWith(undefined, false, undefined);
+    expect(tripRepository.fetchMine).toHaveBeenCalledWith(undefined, undefined);
     expect(data.pages[0]?.items[0]?.title).toBe('Lisbon');
   });
 
@@ -86,8 +85,8 @@ describe('the list', () => {
 
     const data = await freshClient().fetchInfiniteQuery({ ...myItinerariesOptions, pages: 2 });
 
-    expect(tripRepository.fetchMine).toHaveBeenNthCalledWith(1, undefined, false, undefined);
-    expect(tripRepository.fetchMine).toHaveBeenNthCalledWith(2, 'opaque-cursor', false, undefined);
+    expect(tripRepository.fetchMine).toHaveBeenNthCalledWith(1, undefined, undefined);
+    expect(tripRepository.fetchMine).toHaveBeenNthCalledWith(2, 'opaque-cursor', undefined);
     expect(data.pages).toHaveLength(2);
   });
 
@@ -97,46 +96,6 @@ describe('the list', () => {
 
     expect(myItinerariesOptions.getNextPageParam(exhausted, [exhausted], undefined, [undefined])).toBeUndefined();
     expect(myItinerariesOptions.getNextPageParam(more, [more], undefined, [undefined])).toBe('more');
-  });
-});
-
-describe('the archived view (S1.9)', () => {
-  it('asks the repository for the archived half', async () => {
-    tripRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Old Lisbon')] });
-
-    await freshClient().fetchInfiniteQuery(archivedItinerariesOptions);
-
-    expect(tripRepository.fetchMine).toHaveBeenCalledWith(undefined, true);
-  });
-
-
-  it('keeps the two lists in separate cache entries', async () => {
-    const client = freshClient();
-    tripRepository.fetchMine
-      .mockResolvedValueOnce({ items: [trip('live', 'A live trip')] })
-      .mockResolvedValueOnce({ items: [trip('gone', 'An archived trip')] });
-
-    await client.fetchInfiniteQuery(myItinerariesOptions);
-    await client.fetchInfiniteQuery(archivedItinerariesOptions);
-
-    const live = client.getQueryData<InfiniteData<Page<ItineraryResponse>>>(itineraryKeys.list(false));
-    const archived = client.getQueryData<InfiniteData<Page<ItineraryResponse>>>(itineraryKeys.list(true));
-
-    expect(live?.pages[0]?.items[0]?.title).toBe('A live trip');
-    expect(archived?.pages[0]?.items[0]?.title).toBe('An archived trip');
-  });
-
-
-  it('invalidates both views when a trip is archived', async () => {
-    const client = freshClient();
-    tripRepository.fetchMine.mockResolvedValue({ items: [] });
-    await client.fetchInfiniteQuery(myItinerariesOptions);
-    await client.fetchInfiniteQuery(archivedItinerariesOptions);
-
-    await onItineraryUpdated(client, { ...trip('gone', 'An archived trip'), archived: true });
-
-    expect(client.getQueryState(itineraryKeys.list(false))?.isInvalidated).toBe(true);
-    expect(client.getQueryState(itineraryKeys.list(true))?.isInvalidated).toBe(true);
   });
 });
 

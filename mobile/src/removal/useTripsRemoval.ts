@@ -41,6 +41,14 @@ export function useTripsRemoval(announce: (message: string) => void): TripsRemov
       },
       [commands],
     ),
+    useCallback(
+      (ref) => {
+        if (ref.kind === 'deleteTrip') {
+          commands.run(() => commands.unarchiveTrip(ref.subjectId));
+        }
+      },
+      [commands],
+    ),
   );
 
   const leave = useCallback(
@@ -63,7 +71,6 @@ export function useTripsRemoval(announce: (message: string) => void): TripsRemov
         subjectId: itinerary.id,
         kind: 'deleteTrip',
         message: TRIP_DELETED_TOAST,
-        undoable: false,
       });
     },
     [commands, removal],

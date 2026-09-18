@@ -37,7 +37,7 @@ export function tabOf(itinerary: Pick<ItineraryResponse, 'state'>): TripTab {
 
 
 export function tripsInTab(itineraries: ItineraryResponse[], tab: TripTab): ItineraryResponse[] {
-  return itineraries.filter((itinerary) => !itinerary.archived && tabOf(itinerary) === tab);
+  return itineraries.filter((itinerary) => tabOf(itinerary) === tab);
 }
 
 
@@ -49,11 +49,6 @@ export function landingTab(itineraries: ItineraryResponse[], picked: TripTab | n
 
 export function showsCreateBar(tab: TripTab): boolean {
   return tab === 'upcoming';
-}
-
-
-export function showsArchivedLink(tab: TripTab): boolean {
-  return tab === 'completed';
 }
 
 

@@ -20,7 +20,6 @@ import { TripTabRow } from '../../../src/itineraries/TripTabRow';
 import { pickTab, usePickedTab } from '../../../src/itineraries/tripTabStore';
 import {
   landingTab,
-  showsArchivedLink,
   showsCreateBar,
   tabEmptyCopy,
   tripsInTab,
@@ -177,7 +176,6 @@ export default function MyTripsScreen() {
                 {isFetchingNextPage ? (
                   <ActivityIndicator color={colors.accent} style={styles.footer} />
                 ) : null}
-                {rows.length > 0 && showsArchivedLink(active) ? <ArchivedLink /> : null}
               </View>
             }
           />
@@ -217,7 +215,6 @@ function TabEmptyState({ tab }: { tab: TripTab }) {
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyCopy}>{tabEmptyCopy(tab)}</Text>
-      {showsArchivedLink(tab) && <ArchivedLink />}
     </View>
   );
 }
@@ -273,26 +270,6 @@ function PlanATripBar() {
 }
 
 
-function ArchivedLink() {
-  const { opacity, onPressIn, onPressOut } = usePressFeedback();
-
-  return (
-    <View style={styles.archivedRow}>
-      <Link href="/itineraries/archived" asChild>
-        <AnimatedPressable
-          style={{ opacity }}
-          onPressIn={onPressIn}
-          onPressOut={onPressOut}
-          accessibilityRole="link"
-          accessibilityLabel={ARCHIVED_LINK_LABEL}>
-          <Text style={styles.archivedLink}>{ARCHIVED_LINK_LABEL}</Text>
-        </AnimatedPressable>
-      </Link>
-    </View>
-  );
-}
-
-
 function FadeRise({ children, style }: { children: React.ReactNode; style?: object }) {
   const entrance = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
@@ -322,7 +299,6 @@ const REQUESTS_ROUTE = '/requests';
 
 const CREATE_LABEL = 'Plan a Trip';
 
-const ARCHIVED_LINK_LABEL = 'Archived trips';
 
 
 const HEADER_ICON_SIZE = 20;
@@ -366,12 +342,6 @@ const styles = StyleSheet.create({
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   footer: { paddingVertical: spacing.md },
-  archivedRow: { alignItems: 'center', paddingTop: spacing.md, paddingBottom: spacing.xs },
-  archivedLink: {
-    ...tripTabTypography.archivedLink,
-    color: tripTabColors.archivedLink,
-    textDecorationLine: 'underline',
-  },
   ctas: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
