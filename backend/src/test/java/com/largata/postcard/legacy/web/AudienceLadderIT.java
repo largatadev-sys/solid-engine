@@ -60,7 +60,7 @@ class AudienceLadderIT extends PostgresTestBase {
 
 
     @Test
-    void aMembersDirectReadOfAnArchivedTripIsMaskedWhileTheOwnersIsServed() {
+    void aDirectReadOfADeletedTripIsMaskedForEverybody_theOwnerIncluded() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
@@ -72,14 +72,14 @@ class AudienceLadderIT extends PostgresTestBase {
         view(member, tripId).expectStatus().isNotFound().expectBody().jsonPath("$.code").isEqualTo("ITINERARY_NOT_FOUND");
         members(member, tripId).expectStatus().isNotFound();
         invitations(member, tripId).expectStatus().isNotFound();
-        view(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.archived").isEqualTo(true);
-        members(owner, tripId).expectStatus().isOk();
-        invitations(owner, tripId).expectStatus().isOk();
+        view(owner, tripId).expectStatus().isNotFound().expectBody().jsonPath("$.code").isEqualTo("ITINERARY_NOT_FOUND");
+        members(owner, tripId).expectStatus().isNotFound();
+        invitations(owner, tripId).expectStatus().isNotFound();
     }
 
 
     @Test
-    void aMembersDiaryReadsOnAnArchivedTripAreMaskedWhileTheOwnersAreServed() {
+    void diaryReadsThroughADeletedTripAreMaskedForEverybody_theOwnerIncluded() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
@@ -102,13 +102,18 @@ class AudienceLadderIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("ITINERARY_NOT_FOUND");
 
-        diaryList(owner, tripId).expectStatus().isOk();
+        diaryList(owner, tripId)
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
         diaryEntry(owner, tripId, UUID.randomUUID())
                 .expectStatus()
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("DIARY_ENTRY_NOT_FOUND");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 
@@ -180,12 +185,13 @@ class AudienceLadderIT extends PostgresTestBase {
 
         publicView(consumer, tripId).expectStatus().isNotFound();
         view(member, tripId).expectStatus().isNotFound();
-        view(owner, tripId).expectStatus().isOk();
+        view(owner, tripId).expectStatus().isNotFound();
 
         act(owner, tripId, "unarchive");
 
         publicView(consumer, tripId).expectStatus().isOk();
         view(member, tripId).expectStatus().isOk();
+        view(owner, tripId).expectStatus().isOk();
     }
 
 

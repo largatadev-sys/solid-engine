@@ -25,7 +25,9 @@ class MyTripsModuleBoundaryTest {
                     .and(not(resideInAPackage(MYTRIPS + "..")))
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
-                    .and(not(resideInAPackage("com.largata.trip.api..")));
+                    .and(not(resideInAPackage("com.largata.itinerary.api..")))
+                    .and(not(resideInAPackage("com.largata.trip.api..")))
+                    .and(not(resideInAPackage("com.largata.trip.room..")));
 
     private final JavaClasses largata =
             new ClassFileImporter()
@@ -57,7 +59,10 @@ class MyTripsModuleBoundaryTest {
                 .dependOnClassesThat(ANOTHER_MODULE)
                 .as("mytrips is a READ-SURFACE module: it owns the Trips tab's wire contract, owns"
                         + " no table and no query of its own, and reads trip.api for the page and"
-                        + " its facets and the kernel's publication port for the live publication."
+                        + " its facets and itinerary.api for the live publication — which it read"
+                        + " from a port in the shared kernel until TW-2, where the kernel's authz"
+                        + " package dissolved and the reads nobody but a reader needed went to the"
+                        + " module that owns publication."
                         + " An allowlist naming only API packages, never the modules")
                 .check(largata);
     }

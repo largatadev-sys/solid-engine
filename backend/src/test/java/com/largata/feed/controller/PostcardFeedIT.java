@@ -184,16 +184,18 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
 
     @Test
-    void theWalkReachesACardSittingBehindAWhollyArchivedPage() throws IOException {
+    void theWalkReachesACardSittingBehindAWithdrawnOne() throws IOException {
         Fixture buried = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
         String reachable = tag("underneath");
         post(buried, buried.activityId(), reachable);
 
         Fixture hidden = startedTrip();
-        String gone = tag("archived over the top");
-        post(hidden, hidden.activityId(), gone);
-        archive(hidden);
+        String gone = tag("withdrawn over the top");
+        UUID withdrawn = post(hidden, hidden.activityId(), gone);
+        rig.send(HttpMethod.DELETE, diaryUri(hidden) + "/" + withdrawn, hidden.owner(), null)
+                .expectStatus()
+                .isNoContent();
 
         List<String> walked = new ArrayList<>();
         Set<String> cursorsFollowed = new HashSet<>();
@@ -208,49 +210,53 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         } while (cursor != null);
 
         assertThat(onlyMine(walked, reachable, gone))
-                .as("the newest page carries only an archived card, so it comes back EMPTY with a "
+                .as("the newest page carries only a withdrawn card, so it comes back EMPTY with a "
                         + "cursor — and the walk must still arrive at the card underneath. This is "
                         + "the whole reason the cursor is taken from the last row READ rather than "
-                        + "the last card KEPT; take it from the kept card and this stalls.")
+                        + "the last card KEPT; take it from the kept card and this stalls. TW-2 "
+                        + "moved the exclusion from archive to withdrawal; the cursor property is "
+                        + "unchanged and is what this walk is for")
                 .containsExactly(reachable);
     }
 
 
     @Test
-    void archivingATripTakesItsPostcardsOffTheFeedWithIt() throws IOException {
+    void deletingATripLeavesItsPostcardsOnTheFeed_becauseTheRecordSurvives() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        String caption = tag("put away");
+        String caption = tag("still here");
         post(trip, trip.activityId(), caption);
         assertThat(captionsOf(feedFor(stranger))).contains(caption);
 
         archive(trip);
 
         assertThat(captionsOf(feedFor(stranger)))
-                .as("archiving is the traveler's bulk retraction — the whole trip leaves the feed")
-                .doesNotContain(caption);
-    }
-
-
-    @Test
-    void unarchivingPutsThemBackBecauseArchivingIsNotDeleting() throws IOException {
-        Fixture trip = startedTrip();
-        String stranger = rig.travelerWithHandle(handle());
-        String caption = tag("back again");
-        post(trip, trip.activityId(), caption);
-        archive(trip);
-        assertThat(captionsOf(feedFor(stranger))).doesNotContain(caption);
-
-        unarchive(trip);
-
-        assertThat(captionsOf(feedFor(stranger)))
-                .as("reversible, which is the whole reason archive can be the bulk retraction")
+                .as("TW-2 Q17: a postcard is not anchored to the trip, it takes data from it. The"
+                        + " trip is a data source for the teaser; the Diary is the container, and"
+                        + " deleting the source does not retract what was already shared")
                 .contains(caption);
     }
 
 
     @Test
-    void anArchivedTripsPublicDiaryIsNotFoundRatherThanEmpty() throws IOException {
+    void undoLeavesTheFeedExactlyWhereItWas() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String caption = tag("untouched by either act");
+        post(trip, trip.activityId(), caption);
+        archive(trip);
+        assertThat(captionsOf(feedFor(stranger))).contains(caption);
+
+        unarchive(trip);
+
+        assertThat(captionsOf(feedFor(stranger)))
+                .as("neither delete nor undo moves a shared postcard — only deleting the postcard does")
+                .contains(caption);
+    }
+
+
+    @Test
+    void aDeletedTripsPublicDiaryStillReads_butCarriesNoLinkToThePageThatIsGone() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
         UUID author = rig.travelerIdOf(trip.owner());
@@ -259,31 +265,31 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
         archive(trip);
 
-        rest.get()
-                .uri(tripDiaryUri(trip.tripId(), author))
-                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
-                .exchange()
-                .expectStatus()
-                .isNotFound();
+        var after = tripDiaryFor(stranger, trip.tripId(), author);
+        assertThat(after.postcards())
+                .as("the postcards are the record and they survive the trip")
+                .hasSize(1);
+        assertThat(after.postcards().getFirst().publishedItineraryId())
+                .as("…but the published page went with the trip, so no card may link to a 404")
+                .isNull();
     }
 
 
     @Test
-    void archivingOneTripLeavesEveryOtherTripsPostcardsAlone() throws IOException {
-        Fixture archived = startedTrip();
+    void deletingOneTripLeavesEveryTripsPostcardsStanding() throws IOException {
+        Fixture deleted = startedTrip();
         Fixture kept = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        String goes = tag("on the archived trip");
-        String stays = tag("on the other trip");
-        post(archived, archived.activityId(), goes);
-        post(kept, kept.activityId(), stays);
+        String onTheDeleted = tag("on the deleted trip");
+        String onTheOther = tag("on the other trip");
+        post(deleted, deleted.activityId(), onTheDeleted);
+        post(kept, kept.activityId(), onTheOther);
 
-        archive(archived);
+        archive(deleted);
 
         assertThat(captionsOf(feedFor(stranger)))
-                .as("the exclusion is per trip — one archive must not empty the feed")
-                .contains(stays)
-                .doesNotContain(goes);
+                .as("the record survives whichever trip it came from")
+                .contains(onTheOther, onTheDeleted);
     }
 
 

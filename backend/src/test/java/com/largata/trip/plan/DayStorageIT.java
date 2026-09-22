@@ -3,8 +3,10 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -49,7 +51,7 @@ class DayStorageIT extends PostgresTestBase {
     void appendingTakesTheNextOrdinal() {
         Membership member = ownerOf(itineraries.create(UUID.randomUUID(), "Cebu", "Cebu", null, null, null, 2));
 
-        days.appendDay(member, "Arrival");
+        days.appendDay(asOwner(member), "Arrival");
 
         assertThat(ordinalsOf(member.itineraryId())).containsExactly(1, 2, 3);
     }
@@ -62,7 +64,7 @@ class DayStorageIT extends PostgresTestBase {
         UUID thirdDay = dayIdAtOrdinal(trip.id(), 3);
         editLease.acquire(member, LeaseSubject.day(thirdDay));
 
-        days.deleteDay(member, thirdDay);
+        days.deleteDay(asOwner(member), thirdDay);
 
         assertThat(ordinalsOf(trip.id()))
                 .as("the hole at 3 closes; the rest slide down")
@@ -110,5 +112,9 @@ class DayStorageIT extends PostgresTestBase {
 
     private Membership ownerOf(Trip itinerary) {
         return new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
+    }
+
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

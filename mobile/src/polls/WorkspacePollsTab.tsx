@@ -7,7 +7,6 @@ import { PollDeleteDialog } from './PollDeleteDialog';
 import { boardIsWritable } from './pollBoard';
 import {
   POLLS_ACTIVE_SECTION,
-  POLLS_ARCHIVED_NOTE,
   POLLS_COMPLETED_SECTION,
   POLLS_CREATE_CTA,
   POLLS_EMPTY_BODY,
@@ -31,11 +30,10 @@ import type { PollResponse } from '../types/api';
 interface WorkspacePollsTabProps {
   readonly itineraryId: string;
   readonly isOwner: boolean;
-  readonly archived: boolean;
 }
 
 
-export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspacePollsTabProps) {
+export function WorkspacePollsTab({ itineraryId, isOwner }: WorkspacePollsTabProps) {
   const router = useRouter();
   const board = usePollBoard(itineraryId);
   const vote = useCastVote(itineraryId);
@@ -68,7 +66,7 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
 
   const active = board.data?.active ?? [];
   const completed = board.data?.completed ?? [];
-  const writable = boardIsWritable(archived);
+  const writable = boardIsWritable();
   const busy = vote.isPending || close.isPending || remove.isPending;
 
   const openCreate = () =>
@@ -92,7 +90,6 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
         key={poll.id}
         poll={poll}
         isOwner={isOwner}
-        archived={archived}
         canVote={writable}
         busy={busy}
         now={now}
@@ -110,7 +107,6 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
         onDismiss={() => setDoomed(null)}
       />
 
-      {archived && <Text style={styles.notice}>{POLLS_ARCHIVED_NOTE}</Text>}
       {failure !== null && <Text style={styles.failure}>{failure}</Text>}
 
       {active.length === 0 && completed.length === 0 ? (

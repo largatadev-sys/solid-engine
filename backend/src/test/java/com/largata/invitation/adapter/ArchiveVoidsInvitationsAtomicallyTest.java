@@ -3,7 +3,7 @@ package com.largata.invitation.adapter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.invitation.service.InvitationService;
-import com.largata.trip.api.TripArchived;
+import com.largata.trip.room.TripArchived;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Propagation;

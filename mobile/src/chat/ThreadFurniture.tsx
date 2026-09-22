@@ -45,15 +45,6 @@ export function ChatEmptyState() {
 }
 
 
-export function ArchivedNotice() {
-  return (
-    <View style={styles.notice}>
-      <Text style={styles.noticeInk}>{chatCopy.archived}</Text>
-    </View>
-  );
-}
-
-
 export function NewMessagesPill({ onPress }: { readonly onPress: () => void }) {
   const press = usePressFeedback();
 

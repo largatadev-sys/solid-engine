@@ -2,9 +2,7 @@ package com.largata.poll.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.InAudience;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.room.Membership;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -19,8 +17,8 @@ import com.largata.poll.exception.PollExceptions.PollOptionNotFoundException;
 import com.largata.poll.exception.PollExceptions.TooManyOpenPollsException;
 import com.largata.poll.repository.PollRepository;
 import com.largata.poll.repository.PollVoteRepository;
-import com.largata.trip.api.MembershipApi;
-import com.largata.trip.api.MembershipView;
+import com.largata.trip.room.MembershipApi;
+import com.largata.trip.room.MembershipView;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +43,6 @@ public class PollService {
     private final PollVoteInserter inserter;
     private final MembershipApi workspaces;
     private final TravelerService travelers;
-    private final WriteFence writeFence;
     private final Analytics analytics;
     private final Clock clock;
 
@@ -55,7 +52,6 @@ public class PollService {
             PollVoteInserter inserter,
             MembershipApi workspaces,
             TravelerService travelers,
-            WriteFence writeFence,
             Analytics analytics,
             Clock clock) {
         this.polls = polls;
@@ -63,15 +59,14 @@ public class PollService {
         this.inserter = inserter;
         this.workspaces = workspaces;
         this.travelers = travelers;
-        this.writeFence = writeFence;
         this.analytics = analytics;
         this.clock = clock;
     }
 
 
     @Transactional
-    public PollView ask(Membership member, String question, List<String> optionLabels, Instant closesAt) {
-        writeFence.requireWritable(member);
+    public PollView ask(
+            Membership member, String question, List<String> optionLabels, Instant closesAt) {
         Instant now = Instant.now(clock);
         if (closesAt == null || !closesAt.isAfter(now)) {
             throw new DeadlineNotInFutureException();
@@ -89,8 +84,7 @@ public class PollService {
 
 
     @Transactional(readOnly = true)
-    public PollBoard board(InAudience audience) {
-        Membership member = audience.member();
+    public PollBoard board(Membership member) {
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         List<Poll> board = polls.boardOf(workspaceId);
@@ -121,7 +115,6 @@ public class PollService {
 
     @Transactional
     public PollView vote(Membership member, UUID pollId, UUID optionId) {
-        writeFence.requireWritable(member);
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
@@ -140,7 +133,6 @@ public class PollService {
 
     @Transactional
     public PollView close(Membership member, UUID pollId) {
-        writeFence.requireWritable(member);
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
@@ -158,7 +150,6 @@ public class PollService {
 
     @Transactional
     public void delete(Membership member, UUID pollId) {
-        writeFence.requireWritable(member);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
         requireAuthorOrOwner(member, poll);

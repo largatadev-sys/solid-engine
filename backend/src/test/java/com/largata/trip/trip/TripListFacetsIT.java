@@ -3,7 +3,7 @@ package com.largata.trip.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.ThreadLocalStatementCounter;
 import com.largata.support.TestJwtSupport;

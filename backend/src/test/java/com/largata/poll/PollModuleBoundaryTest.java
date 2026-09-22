@@ -29,7 +29,8 @@ class PollModuleBoundaryTest {
                     .and(not(resideInAPackage(POLL + "..")))
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
-                    .and(not(resideInAPackage("com.largata.trip..")));
+                    .and(not(resideInAPackage("com.largata.trip.room..")))
+                    .and(not(resideInAPackage("com.largata.trip.exception..")));
 
     private final JavaClasses largata =
             new ClassFileImporter()

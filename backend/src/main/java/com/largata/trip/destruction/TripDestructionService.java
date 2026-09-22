@@ -2,12 +2,12 @@ package com.largata.trip.destruction;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
 import com.largata.common.tx.AfterCommit;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.trip.api.TripApi;
-import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.ownership.service.OwnershipRows;
 import com.largata.trip.plan.service.PlanRows;
@@ -55,10 +55,8 @@ class TripDestructionService {
 
 
     @Transactional
-    public void destroy(Membership member) {
-        if (!member.isOwner()) {
-            throw new NotTheTripOwnerException("Only the trip owner can delete this trip.");
-        }
+    public void destroy(Owner owner) {
+        Membership member = owner.membership();
         UUID tripId = member.itineraryId();
         trips.factsOf(tripId).orElseThrow(TripNotFoundException::new);
 

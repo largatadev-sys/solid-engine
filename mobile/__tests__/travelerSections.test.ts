@@ -272,11 +272,11 @@ describe('the overflow control', () => {
     expect(rows.filter((row) => row.showMenu).map((row) => row.travelerId)).toEqual(['member-1']);
   });
 
-  it('survives on your own row when the trip is archived — S1.9 canon, the server allows it', () => {
+  it('survives on your own row when the trip is frozen — S1.9 canon, the server allows it', () => {
     const sections = travelerSections(
       input({
         myId: 'member-1',
-        posture: 'archived',
+        posture: 'published',
         roster: [
           member({ travelerId: 'owner-1', role: 'owner' }),
           member({ travelerId: 'member-1' }),
@@ -311,10 +311,9 @@ describe('the published freeze on the surface', () => {
     expect(sections.map((section) => section.key)).toEqual(['travelers']);
   });
 
-  it('takes the add bar away, and archive keeps it away', () => {
+  it('takes the add bar away once the trip is published', () => {
     expect(canAddTravelers('open')).toBe(true);
     expect(canAddTravelers('published')).toBe(false);
-    expect(canAddTravelers('archived')).toBe(false);
   });
 });
 

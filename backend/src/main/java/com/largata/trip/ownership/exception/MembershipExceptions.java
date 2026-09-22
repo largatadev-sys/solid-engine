@@ -57,10 +57,6 @@ public final class MembershipExceptions {
             super("ILLEGAL_STATE_TRANSITION", message);
         }
 
-        public static IllegalWorkspaceTransitionException alreadyArchived() {
-            return new IllegalWorkspaceTransitionException("This trip is already archived.");
-        }
-
         public static IllegalWorkspaceTransitionException notArchived() {
             return new IllegalWorkspaceTransitionException("This trip is not archived.");
         }

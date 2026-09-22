@@ -24,7 +24,6 @@ export const POLL_NO_VOTES_BODY = 'Nobody voted before this poll closed.';
 
 export const POLLS_LOAD_FAILURE = 'Could not load this trip’s polls.';
 
-export const POLLS_ARCHIVED_NOTE = 'This trip is archived, so its polls are read-only.';
 
 export const POLL_CLOSE_NOW_LABEL = 'Close Poll Now';
 
@@ -90,8 +89,6 @@ export function pollErrorMessage(error: Error): string {
         return 'A poll needs a question.';
       case 'POLL_DEADLINE_NOT_FUTURE':
         return 'A poll has to close at some point in the future.';
-      case 'TRIP_ARCHIVED':
-        return 'This trip is archived, so its polls are read-only.';
       case 'ITINERARY_NOT_FOUND':
       case 'TRIP_NOT_FOUND':
         return 'This trip is no longer available to you.';

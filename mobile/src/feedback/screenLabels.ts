@@ -12,7 +12,6 @@ export const SCREEN_LABELS: Readonly<Record<string, string>> = {
   '(tabs)/(trips)/requests': 'Requests',
   '(tabs)/(trips)/create': 'Create trip',
   '(tabs)/(trips)/itineraries/new': 'New trip',
-  '(tabs)/(trips)/itineraries/archived': 'Archived trips',
   '(tabs)/(trips)/itineraries/[id]': 'Trip overview',
   '(tabs)/(trips)/itineraries/[id]/activity': 'Activity',
   '(tabs)/(trips)/itineraries/[id]/created': 'Trip created',

@@ -27,6 +27,7 @@ class InvitationModuleBoundaryTest {
                     .and(not(resideInAPackage(INVITATION + "..")))
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
+                    .and(not(resideInAPackage("com.largata.itinerary.api..")))
                     .and(not(resideInAPackage("com.largata.media..")))
                     .and(not(resideInAPackage("com.largata.trip..")))
                     .and(not(resideInAPackage("com.largata.ws..")));
@@ -57,7 +58,9 @@ class InvitationModuleBoundaryTest {
                 .resideInAPackage(INVITATION + "..")
                 .should()
                 .dependOnClassesThat(A_MODULE_IT_MAY_NOT_NAME)
-                .as("invitation offers a seat at a trip, renders a card and announces the arrival — stated as an ALLOWLIST (common, identity, media, trip, ws), so a module"
+                .as("invitation offers a seat at a trip, renders a card and announces the arrival —"
+                        + " stated as an ALLOWLIST (common, identity, itinerary.api, media, trip,"
+                        + " ws), so a module"
                         + " invented tomorrow is forbidden the day it is created")
                 .check(largata);
     }

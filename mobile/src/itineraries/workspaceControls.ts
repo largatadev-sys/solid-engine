@@ -75,13 +75,13 @@ export function stateBadge(
 
 
 export function ladderCta(
-  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'> & {
+  itinerary: Pick<ItineraryResponse, 'state' | 'published'> & {
     editingSession?: LeaseHolderResponse | null;
   },
   isOwner: boolean,
   viewerTravelerId?: string,
 ): LadderCta | null {
-  if (!isOwner || itinerary.archived || itinerary.published) return null;
+  if (!isOwner || itinerary.published) return null;
 
   const rung = LADDER[itinerary.state];
 
@@ -98,13 +98,12 @@ export function forwardConfirmWording(act: LadderAct): ForwardConfirmWording | n
 
 
 export function editItineraryAction(
-  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'> & {
+  itinerary: Pick<ItineraryResponse, 'state' | 'published'> & {
     editingSession?: LeaseHolderResponse | null;
   },
-  canEditPlan: boolean,
   viewerTravelerId?: string,
 ): EditItineraryAction {
-  if (!canEditPlan || itinerary.archived || itinerary.published) return { kind: 'hidden' };
+  if (itinerary.published) return { kind: 'hidden' };
 
   const session = itinerary.editingSession;
   if (session && session.travelerId !== viewerTravelerId) {

@@ -194,8 +194,9 @@ class ForkContractIT extends PostgresTestBase {
                 .as("the copy starts with an empty history — nothing happened to it yet")
                 .isZero();
         assertThat(stampsOf(forkId))
-                .as("no publish, start or complete stamp survives the copy")
-                .containsExactly(null, null, null);
+                .as("no start or complete stamp survives the copy; publication is the itinerary"
+                        + " object's business and a fork has none (V58 dropped the trip's stamp)")
+                .containsExactly(null, null);
         assertThat(memberIdsOf(forkId)).hasSize(1);
     }
 
@@ -394,12 +395,10 @@ class ForkContractIT extends PostgresTestBase {
 
     private List<Timestamp> stampsOf(UUID itineraryId) {
         return jdbc.queryForObject(
-                "SELECT started_at, completed_at, published_at FROM itinerary WHERE id = ?",
+                "SELECT started_at, completed_at FROM itinerary WHERE id = ?",
                 (row, index) ->
                         java.util.Arrays.asList(
-                                row.getTimestamp("started_at"),
-                                row.getTimestamp("completed_at"),
-                                row.getTimestamp("published_at")),
+                                row.getTimestamp("started_at"), row.getTimestamp("completed_at")),
                 itineraryId);
     }
 

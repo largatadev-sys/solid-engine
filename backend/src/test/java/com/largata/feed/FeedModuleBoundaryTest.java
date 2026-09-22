@@ -30,7 +30,8 @@ class FeedModuleBoundaryTest {
                     .and(not(resideInAPackage("com.largata.itinerary.api..")))
                     .and(not(resideInAPackage("com.largata.postcard.api..")))
                     .and(not(resideInAPackage("com.largata.media..")))
-                    .and(not(resideInAPackage("com.largata.trip.api..")));
+                    .and(not(resideInAPackage("com.largata.trip.api..")))
+                    .and(not(resideInAPackage("com.largata.trip.room..")));
 
     private final JavaClasses largata =
             new ClassFileImporter()

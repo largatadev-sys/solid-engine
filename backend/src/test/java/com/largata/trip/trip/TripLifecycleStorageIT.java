@@ -3,8 +3,10 @@ package com.largata.trip.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.api.TripLifecycle;
 import java.lang.reflect.RecordComponent;
@@ -36,11 +38,11 @@ class TripLifecycleStorageIT extends PostgresTestBase {
                 .isEqualTo("UPCOMING");
         assertThat(TripLifecycle.UPCOMING.wireName()).isEqualTo("upcoming");
 
-        itineraries.start(owner);
+        itineraries.start(asOwner(owner));
         assertThat(storedState(owner.itineraryId())).isEqualTo("ONGOING");
         assertThat(TripLifecycle.ONGOING.wireName()).isEqualTo("ongoing");
 
-        itineraries.complete(owner);
+        itineraries.complete(asOwner(owner));
         assertThat(storedState(owner.itineraryId())).isEqualTo("COMPLETED");
         assertThat(TripLifecycle.COMPLETED.wireName()).isEqualTo("completed");
     }
@@ -98,7 +100,7 @@ class TripLifecycleStorageIT extends PostgresTestBase {
     void theAggregateItselfRefusesASkipEdge() {
         Membership owner = tripOwnedByFreshTraveler();
 
-        assertThatThrownBy(() -> itineraries.complete(owner))
+        assertThatThrownBy(() -> itineraries.complete(asOwner(owner)))
                 .isInstanceOf(IllegalStateTransitionException.class)
                 .hasMessageContaining("upcoming")
                 .hasMessageContaining("completed");
@@ -116,5 +118,9 @@ class TripLifecycleStorageIT extends PostgresTestBase {
         UUID ownerId = UUID.randomUUID();
         Trip itinerary = itineraries.create(ownerId, "Planned trip", "Cebu", null, null);
         return new Membership(ownerId, itinerary.id(), Role.OWNER);
+    }
+
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

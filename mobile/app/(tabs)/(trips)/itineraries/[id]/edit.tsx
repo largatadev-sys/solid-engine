@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
-import { archivedPlanNotice, publishedPlanNotice } from '../../../../../src/components/editLockedMessage';
+import { publishedPlanNotice } from '../../../../../src/components/editLockedMessage';
 import { confirmWith } from '../../../../../src/components/confirmDestructive';
 import { changeTripCurrencyWording } from '../../../../../src/components/confirmDestructiveMessage';
 import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
@@ -85,13 +85,13 @@ export default function EditItineraryScreen() {
   const serverMessage = update.error instanceof ApiError ? update.error.message : undefined;
 
   const frozen =
-    data === undefined ? undefined : data.archived ? archivedPlanNotice : isPublished(data) ? publishedPlanNotice : undefined;
+    data !== undefined && isPublished(data) ? publishedPlanNotice : undefined;
   if (frozen !== undefined) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
         <ScreenHeader title="Edit Trip" back backTo={{ pathname: '/itineraries/[id]', params: { id } }} />
-        <Text style={styles.archivedTitle}>{frozen.title}</Text>
-        <Text style={styles.archivedBody}>{frozen.body}</Text>
+        <Text style={styles.frozenTitle}>{frozen.title}</Text>
+        <Text style={styles.frozenBody}>{frozen.body}</Text>
       </ScrollView>
     );
   }
@@ -119,6 +119,6 @@ export default function EditItineraryScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
-  archivedTitle: { ...typography.bodyStrong, color: colors.textPrimary },
-  archivedBody: { ...typography.caption, color: colors.textSecondary },
+  frozenTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  frozenBody: { ...typography.caption, color: colors.textSecondary },
 });

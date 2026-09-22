@@ -1,15 +1,16 @@
 package com.largata.trip.editing.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
+import static com.largata.trip.room.Door.Rule.EDITABLE;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.ReachesClosedRoom;
 import com.largata.trip.editing.dto.EditLeaseResponse;
 import com.largata.trip.editing.dto.LeaseSubjectRequest;
-import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,41 +24,35 @@ import com.largata.trip.editing.service.EditLeaseService;
 class EditLeaseController {
 
     private final EditLeaseService leases;
-    private final AuthorizationGuard guard;
 
-    EditLeaseController(EditLeaseService leases, AuthorizationGuard guard) {
+    EditLeaseController(EditLeaseService leases) {
         this.leases = leases;
-        this.guard = guard;
     }
 
 
     @PostMapping
+    @Door(EDITABLE)
     EditLeaseResponse acquire(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @RequestBody(required = false) LeaseSubjectRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return EditLeaseResponse.of(leases.acquire(member, LeaseSubjectRequest.resolve(request, itineraryId)));
+            @CurrentMember Membership member, @RequestBody(required = false) LeaseSubjectRequest request) {
+        return EditLeaseResponse.of(
+                leases.acquire(member, LeaseSubjectRequest.resolve(request, member.itineraryId())));
     }
 
 
     @PostMapping("/renew")
+    @Door(EDITABLE)
     EditLeaseResponse renew(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @RequestBody(required = false) LeaseSubjectRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return EditLeaseResponse.of(leases.renew(member, LeaseSubjectRequest.resolve(request, itineraryId)));
+            @CurrentMember Membership member, @RequestBody(required = false) LeaseSubjectRequest request) {
+        return EditLeaseResponse.of(
+                leases.renew(member, LeaseSubjectRequest.resolve(request, member.itineraryId())));
     }
 
 
     @DeleteMapping
+    @Door(OPEN)
+    @ReachesClosedRoom
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void release(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @RequestBody(required = false) LeaseSubjectRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        leases.release(member, LeaseSubjectRequest.resolve(request, itineraryId));
+    void release(@CurrentMember Membership member, @RequestBody(required = false) LeaseSubjectRequest request) {
+        leases.release(member, LeaseSubjectRequest.resolve(request, member.itineraryId()));
     }
 }

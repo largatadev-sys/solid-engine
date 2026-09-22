@@ -1,14 +1,14 @@
 package com.largata.trip.destruction;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
-import com.largata.trip.exception.TripNotFoundException;
-import java.util.UUID;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,22 +18,16 @@ import org.springframework.web.bind.annotation.RestController;
 class TripDestructionController {
 
     private final TripDestructionService trips;
-    private final AuthorizationGuard guard;
 
-    TripDestructionController(TripDestructionService trips, AuthorizationGuard guard) {
+    TripDestructionController(TripDestructionService trips) {
         this.trips = trips;
-        this.guard = guard;
     }
 
 
     @DeleteMapping("/{tripId}")
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void destroy(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
-        trips.destroy(requireMember(traveler, tripId));
-    }
-
-
-    private Membership requireMember(Traveler traveler, UUID tripId) {
-        return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
+    void destroy(@CurrentMember Membership member) {
+        trips.destroy(Owner.of(member, NotTheTripOwnerException::toDeleteTheTrip));
     }
 }

@@ -2,9 +2,10 @@ package com.largata.join.join.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.PublicationState;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.room.Membership;
+import com.largata.itinerary.api.PublishedItineraries;
+import com.largata.trip.room.Owner;
+import com.largata.trip.room.TripFence;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
@@ -15,7 +16,6 @@ import com.largata.join.exception.JoinExceptions.EmailNotVerifiedException;
 import com.largata.join.exception.JoinExceptions.JoinRequestNotFoundException;
 import com.largata.join.exception.JoinExceptions.JoinRequestNotPendingException;
 import com.largata.join.exception.JoinExceptions.LinkClosedException;
-import com.largata.join.exception.JoinExceptions.NotTripOwnerException;
 import com.largata.join.exception.JoinExceptions.UnknownJoinTokenException;
 import com.largata.join.join.adapter.JoinQueueTopic;
 import com.largata.join.join.entity.JoinLink;
@@ -23,8 +23,8 @@ import com.largata.join.join.entity.JoinRequest;
 import com.largata.join.join.entity.JoinRequestStatus;
 import com.largata.join.join.repository.JoinLinkRepository;
 import com.largata.join.join.repository.JoinRequestRepository;
-import com.largata.trip.api.MembershipApi;
-import com.largata.trip.api.MembershipView;
+import com.largata.trip.room.MembershipApi;
+import com.largata.trip.room.MembershipView;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;
 import java.security.SecureRandom;
@@ -59,8 +59,8 @@ public class JoinService {
     private final TripApi itineraries;
     private final TravelerService travelers;
     private final InvitationApi invitations;
-    private final WriteFence fence;
-    private final PublicationState publication;
+    private final TripFence fence;
+    private final PublishedItineraries publishedItineraries;
     private final Analytics analytics;
     private final JoinQueueTopic joinQueue;
     private final Clock clock;
@@ -74,8 +74,8 @@ public class JoinService {
             TripApi itineraries,
             TravelerService travelers,
             InvitationApi invitations,
-            WriteFence fence,
-            PublicationState publication,
+            TripFence fence,
+            PublishedItineraries publishedItineraries,
             Analytics analytics,
             JoinQueueTopic joinQueue,
             Clock clock,
@@ -88,7 +88,7 @@ public class JoinService {
         this.travelers = travelers;
         this.invitations = invitations;
         this.fence = fence;
-        this.publication = publication;
+        this.publishedItineraries = publishedItineraries;
         this.analytics = analytics;
         this.clock = clock;
         this.webBaseUrl = webBaseUrl;
@@ -97,7 +97,6 @@ public class JoinService {
 
     @Transactional
     public JoinLinkView linkFor(Membership member) {
-        fence.requireMembershipMutable(member);
         UUID workspaceId = workspaceIdOf(member.itineraryId());
         JoinLink link = links.findByWorkspaceId(workspaceId).orElseGet(() -> mint(workspaceId));
         return new JoinLinkView(
@@ -170,7 +169,7 @@ public class JoinService {
         if (viewerId.isPresent() && workspaces.isMember(itineraryId, viewerId.get())) {
             return ViewerJoinState.MEMBER;
         }
-        if (isClosed(itineraryId, trip)) {
+        if (isClosed(itineraryId)) {
             return ViewerJoinState.DEAD;
         }
         if (viewerId.isEmpty()) {
@@ -182,8 +181,9 @@ public class JoinService {
     }
 
 
-    private boolean isClosed(UUID itineraryId, TripTeaser trip) {
-        return publication.isPublished(itineraryId) || workspaces.isArchived(itineraryId);
+    private boolean isClosed(UUID itineraryId) {
+        return !publishedItineraries.publishedAmong(List.of(itineraryId)).isEmpty()
+                || workspaces.isArchived(itineraryId);
     }
 
 
@@ -203,9 +203,8 @@ public class JoinService {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException();
         }
-        if (isClosed(itineraryId, trip)) {
-            throw new LinkClosedException();
-        }
+        fence.requireOpenRoom(itineraryId, LinkClosedException::new);
+        fence.requireUnfrozen(itineraryId, LinkClosedException::new);
         if (!contact.verified()) {
             throw new EmailNotVerifiedException();
         }
@@ -236,13 +235,11 @@ public class JoinService {
 
 
     @Transactional(readOnly = true)
-    public List<PendingJoinRequest> queueFor(Membership owner) {
-        if (!owner.isOwner()) {
-            throw NotTripOwnerException.toReadTheQueue();
-        }
+    public List<PendingJoinRequest> queueFor(Owner owner) {
+        Membership member = owner.membership();
         List<JoinRequest> rows =
                 requests.findByWorkspaceIdAndStatusOrderByCreatedAtAsc(
-                        workspaceIdOf(owner.itineraryId()), JoinRequestStatus.PENDING);
+                        workspaceIdOf(member.itineraryId()), JoinRequestStatus.PENDING);
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -343,13 +340,14 @@ public class JoinService {
 
 
     @Transactional
-    public void approve(Membership owner, UUID requestId) {
-        JoinRequest asked = answerable(owner, requestId);
-        UUID itineraryId = owner.itineraryId();
+    public void approve(Owner owner, UUID requestId) {
+        Membership member = owner.membership();
+        JoinRequest asked = answerable(member, requestId);
+        UUID itineraryId = member.itineraryId();
         Instant now = Instant.now(clock);
 
         workspaces.admit(itineraryId, asked.travelerId(), now);
-        asked.approve(owner.travelerId(), now);
+        asked.approve(member.travelerId(), now);
         requests.saveAndFlush(asked);
         invitations.supersedePendingInvitationsFor(asked.workspaceId(), asked.travelerId());
 
@@ -358,34 +356,31 @@ public class JoinService {
                 requestId,
                 itineraryId,
                 asked.travelerId(),
-                owner.travelerId());
+                member.travelerId());
         joinQueue.broadcastQueueChanged(itineraryId);
-        emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), owner.travelerId());
+        emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), member.travelerId());
     }
 
 
     @Transactional
-    public void decline(Membership owner, UUID requestId) {
-        JoinRequest asked = answerable(owner, requestId);
-        asked.decline(owner.travelerId(), Instant.now(clock));
+    public void decline(Owner owner, UUID requestId) {
+        Membership member = owner.membership();
+        JoinRequest asked = answerable(member, requestId);
+        asked.decline(member.travelerId(), Instant.now(clock));
         requests.saveAndFlush(asked);
 
         log.info(
                 "Join request declined: requestId={} itineraryId={} by={}",
                 requestId,
-                owner.itineraryId(),
-                owner.travelerId());
-        joinQueue.broadcastQueueChanged(owner.itineraryId());
+                member.itineraryId(),
+                member.travelerId());
+        joinQueue.broadcastQueueChanged(member.itineraryId());
         emitDecision(
-                "join_request_declined", requestId, owner.itineraryId(), asked.travelerId(), owner.travelerId());
+                "join_request_declined", requestId, member.itineraryId(), asked.travelerId(), member.travelerId());
     }
 
 
     private JoinRequest answerable(Membership owner, UUID requestId) {
-        fence.requireMembershipMutable(owner);
-        if (!owner.isOwner()) {
-            throw NotTripOwnerException.toAnswerARequest();
-        }
         JoinRequest asked = requests.findById(requestId).orElseThrow(JoinRequestNotFoundException::new);
         if (!asked.workspaceId().equals(workspaceIdOf(owner.itineraryId()))) {
             throw new JoinRequestNotFoundException();

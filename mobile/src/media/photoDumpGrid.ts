@@ -11,11 +11,10 @@ export function photoDumpTiles(
   photos: readonly PhotoDumpEntryResponse[],
   myId: string | undefined,
   isOwner: boolean,
-  archived: boolean,
 ): DumpTile[] {
   return photos.map((photo) => ({
     photo,
-    deletable: !archived && myId !== undefined && (isOwner || photo.uploadedBy === myId),
+    deletable: myId !== undefined && (isOwner || photo.uploadedBy === myId),
   }));
 }
 

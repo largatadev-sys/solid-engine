@@ -15,7 +15,7 @@ export const WORKSPACE_MENU_LABELS: Readonly<Record<WorkspaceMenuItem, string>> 
 export const TRIP_SETTINGS_LABEL = 'Trip settings';
 
 
-export type MenuSubject = Pick<ItineraryResponse, 'published' | 'archived'>;
+export type MenuSubject = Pick<ItineraryResponse, 'published'>;
 
 
 export function workspaceMenuItems(itinerary: MenuSubject, isOwner: boolean): WorkspaceMenuItem[] {
@@ -23,7 +23,7 @@ export function workspaceMenuItems(itinerary: MenuSubject, isOwner: boolean): Wo
 
   if (isOwner && isEditable(itinerary)) items.push('edit-details');
   if (itinerary.published) items.push('view-published');
-  if (isOwner && itinerary.published && !itinerary.archived) items.push('unpublish');
+  if (isOwner && itinerary.published) items.push('unpublish');
 
   return items;
 }

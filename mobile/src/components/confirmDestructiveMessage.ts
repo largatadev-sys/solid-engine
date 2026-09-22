@@ -124,26 +124,6 @@ export function unpublishTripWording(): ConfirmWording {
   };
 }
 
-
-export function archiveTripWording(published: boolean): ConfirmWording {
-  const page = published ? ' Your published page goes down until you unarchive.' : '';
-  return {
-    title: 'Archive this trip?',
-    body: `It disappears for everyone else on it — they lose the trip from their list entirely — and nobody can edit it, including you.${page} Pending invites and ownership offers are cancelled. You can unarchive it at any time.`,
-    confirmLabel: 'Archive',
-  };
-}
-
-
-export function unarchiveTripWording(published: boolean): ConfirmWording {
-  const page = published ? ' Your published page goes back up.' : '';
-  return {
-    title: 'Unarchive this trip?',
-    body: `Everyone on the trip gets it back and can edit again.${page} Invites and offers cancelled by archiving are not restored.`,
-    confirmLabel: 'Unarchive',
-  };
-}
-
 export function changeTripCurrencyWording(): ConfirmWording {
   return {
     title: 'Change trip currency?',

@@ -18,6 +18,7 @@ export interface RemovalCommands {
   readonly republish: (itineraryId: string) => Promise<void>;
   readonly leaveTrip: (itineraryId: string, travelerId: string) => Promise<void>;
   readonly archiveTrip: (itineraryId: string) => Promise<void>;
+  readonly unarchiveTrip: (itineraryId: string) => Promise<void>;
   readonly run: (command: () => Promise<void>) => void;
 }
 
@@ -80,6 +81,14 @@ export function useRemovalCommands(announce: (message: string) => void): Removal
     archiveTrip: useCallback(
       async (itineraryId: string) => {
         await tripRepository.archiveTrip(itineraryId);
+        await refreshItineraries();
+      },
+      [refreshItineraries],
+    ),
+
+    unarchiveTrip: useCallback(
+      async (itineraryId: string) => {
+        await tripRepository.unarchiveTrip(itineraryId);
         await refreshItineraries();
       },
       [refreshItineraries],

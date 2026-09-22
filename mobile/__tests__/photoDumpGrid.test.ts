@@ -20,37 +20,31 @@ describe('photoDumpTiles', () => {
   const theirs = photo('p2', 't2');
 
   it('lets a member delete their own photo and nobody elses', () => {
-    const tiles = photoDumpTiles([mine, theirs], 't1', false, false);
+    const tiles = photoDumpTiles([mine, theirs], 't1', false);
 
     expect(tiles.map((tile) => tile.deletable)).toEqual([true, false]);
   });
 
   it('lets the owner delete anyones photo', () => {
-    const tiles = photoDumpTiles([mine, theirs], 't1', true, false);
+    const tiles = photoDumpTiles([mine, theirs], 't1', true);
 
     expect(tiles.map((tile) => tile.deletable)).toEqual([true, true]);
   });
 
-  it('offers no deletion at all on an archived trip, owner included', () => {
-    const tiles = photoDumpTiles([mine, theirs], 't1', true, true);
-
-    expect(tiles.map((tile) => tile.deletable)).toEqual([false, false]);
-  });
-
   it('offers no deletion while the traveler is unknown', () => {
-    const tiles = photoDumpTiles([mine, theirs], undefined, false, false);
+    const tiles = photoDumpTiles([mine, theirs], undefined, false);
 
     expect(tiles.map((tile) => tile.deletable)).toEqual([false, false]);
   });
 
   it('keeps the pool in the order the server paged it', () => {
-    const tiles = photoDumpTiles([theirs, mine], 't1', false, false);
+    const tiles = photoDumpTiles([theirs, mine], 't1', false);
 
     expect(tiles.map((tile) => tile.photo.id)).toEqual(['p2', 'p1']);
   });
 
   it('is what the preview asks to decide whether to offer Delete, so every tile stays openable', () => {
-    const tiles = photoDumpTiles([mine, theirs], 't1', false, true);
+    const tiles = photoDumpTiles([mine, theirs], 't1', false);
 
     expect(tiles).toHaveLength(2);
     expect(tiles.map((tile) => tile.photo.id)).toEqual(['p1', 'p2']);

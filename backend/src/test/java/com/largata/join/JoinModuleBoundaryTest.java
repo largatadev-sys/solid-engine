@@ -31,6 +31,7 @@ class JoinModuleBoundaryTest {
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
                     .and(not(resideInAPackage("com.largata.invitation..")))
+                    .and(not(resideInAPackage("com.largata.itinerary.api..")))
                     .and(not(resideInAPackage("com.largata.media..")))
                     .and(not(resideInAPackage("com.largata.trip..")))
                     .and(not(resideInAPackage("com.largata.ws..")));
@@ -65,7 +66,9 @@ class JoinModuleBoundaryTest {
                 .resideInAPackage(JOIN + "..")
                 .should()
                 .dependOnClassesThat(A_MODULE_IT_MAY_NOT_NAME)
-                .as("join asks for a seat, supersedes any open invitation and announces the arrival — stated as an ALLOWLIST (common, identity, invitation, media, trip, ws), so a module"
+                .as("join asks for a seat, supersedes any open invitation and announces the arrival —"
+                        + " stated as an ALLOWLIST (common, identity, invitation, itinerary.api,"
+                        + " media, trip, ws), so a module"
                         + " invented tomorrow is forbidden the day it is created")
                 .check(largata);
     }

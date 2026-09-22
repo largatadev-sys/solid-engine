@@ -57,31 +57,16 @@ describe('reading the list', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?cursor=a%2Bb%2Fc%3D');
   });
 
-  it('asks for the archived view only when asked to (S1.9)', async () => {
-    apiClient.get.mockResolvedValue({ items: [] });
-
-    await tripRepository.fetchMine(undefined, true);
-
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?archived=true');
-  });
-
   it('leaves the default list’s URL byte-identical to the pre-S1.9 one', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await tripRepository.fetchMine(undefined, false);
-    await tripRepository.fetchMine('MDE5-abc', false);
+    await tripRepository.fetchMine();
+    await tripRepository.fetchMine('MDE5-abc');
 
     expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/trips');
     expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/trips?cursor=MDE5-abc');
   });
 
-  it('threads a cursor through the archived view too', async () => {
-    apiClient.get.mockResolvedValue({ items: [] });
-
-    await tripRepository.fetchMine('MDE5-abc', true);
-
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?cursor=MDE5-abc&archived=true');
-  });
 });
 
 describe('unarchiving (S1.9 — the archive control itself was removed from the UI, founder 08/01)', () => {

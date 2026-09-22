@@ -6,7 +6,6 @@ import { joinTrip, seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { exactlyLabelled, labelled } from '../support/screen';
 import {
   POLLS_ACTIVE_SECTION,
-  POLLS_ARCHIVED_NOTE,
   POLLS_COMPLETED_SECTION,
   POLLS_CREATE_CTA,
   POLLS_EMPTY_BODY,
@@ -409,23 +408,18 @@ test.describe('the refusals a discriminating probe can tell apart', () => {
 });
 
 
-test('an archived trip renders the board read-only for the owner', async ({ page }) => {
-  const archived = await seedTrip({
+test('a DELETED trip has no poll board to read — not found for its owner too (ADR-040)', async () => {
+  const deleted = await seedTrip({
     ownerTag: OWNER,
-    title: stamp('Polls archived'),
+    title: stamp('Polls deleted'),
     durationDays: 2,
   });
-  await askViaApi(archived.id, ownerToken, 'Before the archive');
-  await api(`/v1/trips/${archived.id}/archive`, 'POST', ownerToken, {});
+  await askViaApi(deleted.id, ownerToken, 'Before the delete');
+  await api(`/v1/trips/${deleted.id}/archive`, 'POST', ownerToken, {});
 
-  await page.goto(pollsRoute(archived.id));
-
-  await expect(page.getByText(POLLS_ARCHIVED_NOTE)).toBeVisible();
-  await expect(page.getByText('Before the archive')).toBeVisible();
-  await expect(labelled(page, POLLS_CREATE_CTA)).toHaveCount(0);
-  await expect(labelled(page, POLL_CLOSE_NOW_LABEL)).toHaveCount(0);
-  await expect(labelled(page, POLL_DELETE_LABEL)).toHaveCount(0);
-  await expect(labelled(page, 'Submit Vote')).toHaveCount(0);
+  const board = await api(`/v1/trips/${deleted.id}/polls`, 'GET', ownerToken);
+  expect(board.status).toBe(404);
+  expect(board.body?.code).toBe('ITINERARY_NOT_FOUND');
 });
 
 

@@ -1,6 +1,6 @@
 package com.largata.trip.plan.entity;
 
-import com.largata.common.authz.PublicationState;
+import com.largata.trip.room.PublicationState;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.workspace.entity.WorkspaceState;
 import java.time.Instant;

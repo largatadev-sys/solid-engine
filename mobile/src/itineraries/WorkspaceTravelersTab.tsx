@@ -60,7 +60,6 @@ interface WorkspaceTravelersTabProps {
   readonly tripTitle: string;
   readonly myId: string | undefined;
   readonly published: boolean;
-  readonly archived: boolean;
 }
 
 
@@ -69,10 +68,9 @@ export function WorkspaceTravelersTab({
   tripTitle,
   myId,
   published,
-  archived,
 }: WorkspaceTravelersTabProps) {
   const router = useRouter();
-  const posture: TripPosture = archived ? 'archived' : published ? 'published' : 'open';
+  const posture: TripPosture = published ? 'published' : 'open';
   const open = posture === 'open';
 
   const members = useMembers(itineraryId);

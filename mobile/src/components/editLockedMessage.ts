@@ -15,16 +15,7 @@ export const publishedPlanNotice: EditLockedMessage = {
 };
 
 
-export const archivedPlanNotice: EditLockedMessage = {
-  title: 'This trip is archived',
-  body: 'Archived trips are read-only. Unarchive it from the trip screen to make changes.',
-};
-
-
 export function editLockedMessage(error: unknown): EditLockedMessage {
-  if (error instanceof ApiError && error.code === 'TRIP_ARCHIVED') {
-    return archivedPlanNotice;
-  }
   if (error instanceof ApiError && error.code === 'ITINERARY_PUBLISHED') {
     return publishedPlanNotice;
   }

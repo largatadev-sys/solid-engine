@@ -1,6 +1,6 @@
 package com.largata.trip.history;
 
-import com.largata.common.authz.Membership;
+import com.largata.trip.room.Membership;
 import java.time.Clock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;

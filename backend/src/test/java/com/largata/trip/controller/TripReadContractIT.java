@@ -126,7 +126,7 @@ class TripReadContractIT extends PostgresTestBase {
 
 
     @Test
-    void anArchivedTripVanishesForTheMemberButNotTheOwnerOnBothRoots() {
+    void aDeletedTripVanishesForEverybodyOnBothRoots_theOwnerIncluded() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
         String member = rig.joinAsMember(owner, trip, handle());
@@ -152,11 +152,34 @@ class TripReadContractIT extends PostgresTestBase {
                     .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                     .exchange()
                     .expectStatus()
-                    .isOk()
+                    .isNotFound()
                     .expectBody()
-                    .jsonPath("$.archived")
-                    .isEqualTo(true);
+                    .jsonPath("$.code")
+                    .isEqualTo("ITINERARY_NOT_FOUND");
         }
+    }
+
+
+    @Test
+    void deletingADeletedTripIsNotAnAct_theMaskAnswersItsOwner() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        rest.post()
+                .uri("/v1/trips/" + trip + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 

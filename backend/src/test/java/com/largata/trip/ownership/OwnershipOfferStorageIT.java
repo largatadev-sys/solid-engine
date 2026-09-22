@@ -4,8 +4,10 @@ import com.largata.trip.ownership.entity.OwnershipOfferStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.room.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.time.Instant;
@@ -37,7 +39,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
         UUID ownerId = UUID.randomUUID();
         UUID memberId = admittedMemberOn(newTrip(ownerId), ownerId);
         UUID itineraryId = itineraryOf(memberId);
-        memberships.offerOwnership(ownerMembership(itineraryId, ownerId), memberId);
+        memberships.offerOwnership(asOwner(ownerMembership(itineraryId, ownerId)), memberId);
 
         String stored =
                 jdbc.queryForObject(
@@ -133,5 +135,9 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
 
     private static Membership ownerMembership(UUID itineraryId, UUID ownerId) {
         return new Membership(ownerId, itineraryId, Role.OWNER);
+    }
+
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

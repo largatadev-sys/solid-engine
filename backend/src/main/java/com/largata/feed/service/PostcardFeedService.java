@@ -14,7 +14,7 @@ import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.postcard.api.SharedEntries;
-import com.largata.trip.api.MembershipApi;
+import com.largata.trip.room.MembershipApi;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;
 import java.util.List;
@@ -145,8 +145,7 @@ public class PostcardFeedService {
         Map<UUID, UUID> itineraryIds = itineraries.objectIdsByTrip(List.copyOf(trips.keySet()));
 
         return rows.stream()
-                .filter(entry -> entry.tripId() == null || !archived.contains(entry.tripId()))
-                .map(entry -> cardOf(entry, authors, trips, photosByEntry, itineraryIds))
+                .map(entry -> cardOf(entry, authors, trips, photosByEntry, itineraryIds, archived))
                 .filter(card -> card != null)
                 .toList();
     }
@@ -157,7 +156,8 @@ public class PostcardFeedService {
             Map<UUID, TravelerCardResponse> authors,
             Map<UUID, TripTeaser> trips,
             Map<UUID, List<Photo>> photosByEntry,
-            Map<UUID, UUID> itineraryIds) {
+            Map<UUID, UUID> itineraryIds,
+            Set<UUID> archived) {
         TravelerCardResponse author = authors.get(entry.authorId());
         TripTeaser trip = entry.tripId() == null ? null : trips.get(entry.tripId());
         if (author == null || (entry.tripId() != null && trip == null)) {
@@ -174,7 +174,9 @@ public class PostcardFeedService {
                 entry.tripId(),
                 trip == null ? null : trip.title(),
                 trip == null ? null : trip.destination(),
-                trip == null ? null : itineraryIds.get(trip.tripId()),
+                trip == null || archived.contains(trip.tripId())
+                        ? null
+                        : itineraryIds.get(trip.tripId()),
                 entry.dayLabel(),
                 entry.activityTitle(),
                 entry.place(),

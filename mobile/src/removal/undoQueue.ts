@@ -3,6 +3,7 @@ import {
   ITINERARY_REPUBLISHED_TOAST,
   POSTCARD_RESTORED_TOAST,
   REPUBLISH_LABEL,
+  TRIP_RESTORED_TOAST,
   UNDO_LABEL,
 } from './removalCopy';
 
@@ -86,7 +87,7 @@ const RESTORED_MESSAGE: Record<RemovalKind, string | null> = {
   deletePostcard: POSTCARD_RESTORED_TOAST,
   leaveTrip: BACK_IN_TRIP_TOAST,
   unpublish: ITINERARY_REPUBLISHED_TOAST,
-  deleteTrip: null,
+  deleteTrip: TRIP_RESTORED_TOAST,
 };
 
 

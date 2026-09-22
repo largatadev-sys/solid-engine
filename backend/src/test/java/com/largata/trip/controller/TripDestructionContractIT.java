@@ -185,12 +185,12 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 
     @Test
-    void destructionWorksFromTheArchivedStateToo() {
+    void destroyingADeletedTripIsNotAnAct_theMaskAnswersItsOwner() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
         rest.post()
@@ -205,13 +205,17 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
-                .isNoContent();
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
         assertThat(
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM itinerary WHERE id = ?",
                                 Integer.class,
                                 UUID.fromString(trip)))
-                .isZero();
+                .as("a deleted trip is not destroyed through the route it is not found on; the bin story owns that")
+                .isEqualTo(1);
     }
 
 
@@ -239,7 +243,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
+                .isEqualTo("ITINERARY_NOT_FOUND");
         rest.get()
                 .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))

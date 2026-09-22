@@ -2,16 +2,18 @@ package com.largata.trip.ownership.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Role;
+import com.largata.trip.room.Owner;
+import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.MembershipFrozenException;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.trip.api.MembershipEnded;
-import com.largata.trip.api.TripArchived;
-import com.largata.trip.api.MembershipView;
+import com.largata.trip.room.MembershipEnded;
+import com.largata.trip.room.TripArchived;
+import com.largata.trip.room.MembershipView;
 import com.largata.trip.workspace.entity.WorkspaceState;
 import java.time.Instant;
 import java.util.List;
@@ -51,7 +53,7 @@ public class MembershipService {
     private final TravelerService travelers;
     private final TripService itineraries;
     private final EditLeaseService leases;
-    private final WriteFence fence;
+    private final TripFence fence;
     private final OwnershipOfferRepository offers;
     private final OwnershipTransferRepository transfers;
     private final Analytics analytics;
@@ -62,7 +64,7 @@ public class MembershipService {
             TravelerService travelers,
             TripService itineraries,
             EditLeaseService leases,
-            WriteFence fence,
+            TripFence fence,
             OwnershipOfferRepository offers,
             OwnershipTransferRepository transfers,
             Analytics analytics,
@@ -85,10 +87,9 @@ public class MembershipService {
         boolean leaving = caller.travelerId().equals(targetTravelerId);
 
         if (!leaving) {
-            fence.requireMembershipMutable(caller);
-            if (!caller.isOwner()) {
-                throw NotTheTripOwnerException.toRemoveAMember();
-            }
+            fence.requireOpenRoom(itineraryId);
+            Owner.of(caller, NotTheTripOwnerException::toRemoveAMember);
+            fence.requireUnfrozen(itineraryId, MembershipFrozenException::new);
         }
         if (leaving && caller.isOwner()) {
             throw new OwnerCannotLeaveException();
@@ -128,43 +129,34 @@ public class MembershipService {
 
 
     @Transactional
-    public void archive(Membership owner) {
-        UUID itineraryId = requireOwnerToChangeArchiveState(owner);
-        if (currentState(itineraryId).isArchived()) {
-            throw IllegalWorkspaceTransitionException.alreadyArchived();
-        }
+    public void archive(Owner owner) {
+        UUID itineraryId = owner.membership().itineraryId();
+        UUID by = owner.membership().travelerId();
 
         workspaces.archive(itineraryId);
         leases.releaseAnyHold(itineraryId);
-        voidAnyPendingOffer(itineraryId, owner.travelerId());
-        events.publishEvent(
-                new TripArchived(itineraryId, workspaceIdOf(itineraryId), owner.travelerId()));
+        voidAnyPendingOffer(itineraryId, by);
+        events.publishEvent(new TripArchived(itineraryId, workspaceIdOf(itineraryId), by));
 
-        log.info("Trip archived: itineraryId={} by={}", itineraryId, owner.travelerId());
-        emitArchiveEvent("itinerary_archived", itineraryId, owner.travelerId());
+        log.info("Trip archived: itineraryId={} by={}", itineraryId, by);
+        emitArchiveEvent("itinerary_archived", itineraryId, by);
     }
 
 
     @Transactional
-    public void unarchive(Membership owner) {
-        UUID itineraryId = requireOwnerToChangeArchiveState(owner);
+    public void unarchive(Owner owner) {
+        UUID itineraryId = owner.membership().itineraryId();
+        UUID by = owner.membership().travelerId();
         if (!currentState(itineraryId).isArchived()) {
             throw IllegalWorkspaceTransitionException.notArchived();
         }
 
-        workspaces.unarchive(itineraryId, itineraries.isCompleted(itineraryId));
+        workspaces.unarchive(itineraryId);
 
-        log.info("Trip unarchived: itineraryId={} by={}", itineraryId, owner.travelerId());
-        emitArchiveEvent("itinerary_unarchived", itineraryId, owner.travelerId());
+        log.info("Trip unarchived: itineraryId={} by={}", itineraryId, by);
+        emitArchiveEvent("itinerary_unarchived", itineraryId, by);
     }
 
-
-    private UUID requireOwnerToChangeArchiveState(Membership caller) {
-        if (!caller.isOwner()) {
-            throw NotTheTripOwnerException.toChangeArchiveState();
-        }
-        return caller.itineraryId();
-    }
 
     private WorkspaceState currentState(UUID itineraryId) {
         return workspaces
@@ -204,13 +196,10 @@ public class MembershipService {
 
 
     @Transactional
-    public void offerOwnership(Membership owner, UUID targetTravelerId) {
-        UUID itineraryId = owner.itineraryId();
-        fence.requireMembershipMutable(owner);
-        if (!owner.isOwner()) {
-            throw NotTheTripOwnerException.toOfferOwnership();
-        }
-        if (owner.travelerId().equals(targetTravelerId)) {
+    public void offerOwnership(Owner owner, UUID targetTravelerId) {
+        Membership member = owner.membership();
+        UUID itineraryId = member.itineraryId();
+        if (member.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
         }
         if (workspaces.roleOf(itineraryId, targetTravelerId).isEmpty()) {
@@ -223,24 +212,21 @@ public class MembershipService {
 
         OwnershipOffer offer =
                 offers.save(
-                        OwnershipOffer.open(workspaceId, targetTravelerId, owner.travelerId(), Instant.now()));
+                        OwnershipOffer.open(workspaceId, targetTravelerId, member.travelerId(), Instant.now()));
         log.info(
                 "Ownership offered: itineraryId={} offerId={} to={} by={}",
                 itineraryId,
                 offer.id(),
                 targetTravelerId,
-                owner.travelerId());
-        emitAfterCommit("ownership_offer_created", itineraryId, targetTravelerId, owner.travelerId());
+                member.travelerId());
+        emitAfterCommit("ownership_offer_created", itineraryId, targetTravelerId, member.travelerId());
     }
 
 
     @Transactional
-    public void revokeOwnershipOffer(Membership owner) {
-        UUID itineraryId = owner.itineraryId();
-        fence.requireMembershipMutable(owner);
-        if (!owner.isOwner()) {
-            throw NotTheTripOwnerException.toRevokeAnOffer();
-        }
+    public void revokeOwnershipOffer(Owner owner) {
+        Membership member = owner.membership();
+        UUID itineraryId = member.itineraryId();
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);
         if (pending.isEmpty()) {
@@ -250,13 +236,12 @@ public class MembershipService {
         offer.revoke(Instant.now());
         offers.saveAndFlush(offer);
         log.info("Ownership offer revoked: itineraryId={} offerId={}", itineraryId, offer.id());
-        emitAfterCommit("ownership_offer_revoked", itineraryId, offer.targetTravelerId(), owner.travelerId());
+        emitAfterCommit("ownership_offer_revoked", itineraryId, offer.targetTravelerId(), member.travelerId());
     }
 
 
     @Transactional
     public void acceptOwnershipOffer(Membership caller) {
-        fence.requireMembershipUnfrozen(caller.itineraryId());
         OwnershipOffer offer = requireOfferFor(caller);
         UUID itineraryId = caller.itineraryId();
         UUID newOwnerId = caller.travelerId();
@@ -298,7 +283,6 @@ public class MembershipService {
 
     @Transactional
     public void declineOwnershipOffer(Membership caller) {
-        fence.requireMembershipUnfrozen(caller.itineraryId());
         OwnershipOffer offer = requireOfferFor(caller);
         offer.decline(Instant.now());
         offers.saveAndFlush(offer);

@@ -37,7 +37,6 @@ import type { PollResponse } from '../types/api';
 interface PollCardProps {
   readonly poll: PollResponse;
   readonly isOwner: boolean;
-  readonly archived: boolean;
   readonly canVote: boolean;
   readonly busy: boolean;
   readonly now: number;
@@ -50,7 +49,6 @@ interface PollCardProps {
 export function PollCard({
   poll,
   isOwner,
-  archived,
   canVote,
   busy,
   now,
@@ -63,7 +61,7 @@ export function PollCard({
 
   const closed = isClosed(poll);
   const submit = canVote ? submitButtonFor(poll, selected, busy) : null;
-  const footer = footerActionsFor(poll, isOwner, archived);
+  const footer = footerActionsFor(poll, isOwner);
   const progress = progressFor(poll);
   const nobodyVoted = closed && poll.votedCount === 0;
   const showHint = canVote && !closed && submit === null;

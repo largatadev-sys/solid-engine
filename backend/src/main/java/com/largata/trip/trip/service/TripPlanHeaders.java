@@ -41,7 +41,6 @@ public class TripPlanHeaders {
                 trip.endDate(),
                 trip.pin(),
                 trip.state(),
-                trip.isPublished(),
                 List.of());
     }
 }

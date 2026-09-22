@@ -2,8 +2,8 @@ package com.largata.trip.plan.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
 import com.largata.common.tx.AfterCommit;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.exception.PlanLimitExceededException;
-import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.history.ActivityHistoryService;
 import com.largata.trip.history.HistoryAct;
 import com.largata.trip.editing.entity.LeaseSubject;
@@ -48,7 +47,6 @@ public class DayService {
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
-    private final WriteFence fence;
     private final Analytics analytics;
     private final PhotoService photos;
 
@@ -60,7 +58,6 @@ public class DayService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
-            WriteFence fence,
             Analytics analytics,
             PhotoService photos) {
         this.days = days;
@@ -68,7 +65,6 @@ public class DayService {
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
-        this.fence = fence;
         this.analytics = analytics;
         this.photos = photos;
     }
@@ -121,8 +117,8 @@ public class DayService {
 
 
     @Transactional
-    public DayView appendDay(Membership member, String title) {
-        requireOwnerOfWritableTrip(member);
+    public DayView appendDay(Owner owner, String title) {
+        Membership member = owner.membership();
         editLease.requireNoForeignSession(member);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
@@ -153,8 +149,8 @@ public class DayService {
 
 
     @Transactional
-    public void deleteDay(Membership member, UUID dayId) {
-        requireOwnerOfWritableTrip(member);
+    public void deleteDay(Owner owner, UUID dayId) {
+        Membership member = owner.membership();
         UUID itineraryId = member.itineraryId();
         Day day = require(itineraryId, dayId);
         editLease.requireHeldBy(member, LeaseSubject.day(dayId));
@@ -189,14 +185,6 @@ public class DayService {
 
     private Day require(UUID itineraryId, UUID dayId) {
         return days.findByIdAndItineraryId(dayId, itineraryId).orElseThrow(DayNotFoundException::new);
-    }
-
-
-    private void requireOwnerOfWritableTrip(Membership member) {
-        fence.requireEditable(member);
-        if (!member.isOwner()) {
-            throw new NotTheTripOwnerException("Only the trip owner can add or remove days.");
-        }
     }
 
 

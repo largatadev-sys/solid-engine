@@ -74,25 +74,38 @@ class TripArchiveContractIT extends PostgresTestBase {
 
 
     @Test
-    void unarchiveRestoresCompletedForACompletedTripAndActiveForEverythingElse() {
+    void unarchiveAnswersCompletedForACompletedTripAndActiveForEverythingElse() {
         String owner = freshTraveler();
 
         String completed = createItinerary(owner);
         start(owner, completed).expectStatus().isOk();
         complete(owner, completed).expectStatus().isOk();
         archive(owner, completed).expectStatus().isOk();
-        unarchive(owner, completed).expectStatus().isOk();
-        assertThat(workspaceStateOf(completed)).isEqualTo("COMPLETED");
+        unarchive(owner, completed)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.workspaceState")
+                .isEqualTo("completed");
+        assertThat(workspaceStateOf(completed))
+                .as("TW-2: the ROOM is open — `completed` is the lifecycle, projected onto the wire"
+                        + " beside it, rather than a second copy of it stored here")
+                .isEqualTo("ACTIVE");
 
         String neverTravelled = createItinerary(owner);
         archive(owner, neverTravelled).expectStatus().isOk();
-        unarchive(owner, neverTravelled).expectStatus().isOk();
+        unarchive(owner, neverTravelled)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.workspaceState")
+                .isEqualTo("active");
         assertThat(workspaceStateOf(neverTravelled)).isEqualTo("ACTIVE");
     }
 
 
     @Test
-    void archivingAnArchivedTripIsAConflictAndUnarchivingALiveOneIs() {
+    void unarchivingALiveTripIsAConflictAndArchivingAnArchivedOneIsNotAnAct() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
@@ -106,10 +119,10 @@ class TripArchiveContractIT extends PostgresTestBase {
         archive(owner, tripId).expectStatus().isOk();
         archive(owner, tripId)
                 .expectStatus()
-                .isEqualTo(409)
+                .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("ILLEGAL_STATE_TRANSITION");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
     @Test

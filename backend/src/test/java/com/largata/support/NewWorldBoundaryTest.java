@@ -46,7 +46,7 @@ class NewWorldBoundaryTest {
     @Test
     void theRuleWouldFireOnABadImport() {
         assertThat(OLD_WORLD.matcher(anImportOf("invitation", "InvitationService")).find()).isTrue();
-        assertThat(OLD_WORLD.matcher(anImportOf("common.authz", "Membership")).find()).isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("trip.room", "Membership")).find()).isFalse();
         assertThat(OLD_WORLD.matcher(anImportOf("media", "PhotoService")).find()).isFalse();
         assertThat(OLD_WORLD.matcher(anImportOf("identity", "Traveler")).find()).isFalse();
         assertThat(OLD_WORLD.matcher(anImportOf("diary", "DiaryService")).find()).isFalse();

@@ -260,7 +260,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripTakesItsPostcardsOffThePublicDiary() throws IOException {
+    void aDeletedTripsDiarySectionStaysOnThePublicProfile_becauseTheRecordSurvives() throws IOException {
         String handle = handle();
         Fixture trip = startedTripOwnedBy(handle);
         post(trip, trip.activityId(), "Cloud 9 boardwalk");
@@ -273,8 +273,9 @@ class PublicProfileIT extends ObjectStoreTestBase {
         archive(trip.owner(), trip.tripId());
 
         assertThat(idsIn(read(profileUri(handle) + "/diary/trips", viewer), "itineraryId"))
-                .as("archiving retires the trip from every stranger-facing surface, this one included")
-                .isEmpty();
+                .as("TW-2 Q17: the diary is the container and the trip is a data source. Deleting the"
+                        + " source retires the PUBLISHED PAGE and every link to it, not the record")
+                .containsExactly(trip.tripId());
     }
 
 

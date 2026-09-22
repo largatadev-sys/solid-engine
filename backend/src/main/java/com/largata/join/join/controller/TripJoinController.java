@@ -1,10 +1,13 @@
 package com.largata.join.join.controller;
 
+import static com.largata.trip.room.Door.Rule.MEMBERSHIP_MUTABLE;
+
 import com.largata.common.api.Page;
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.common.security.CurrentTraveler;
-import com.largata.identity.Traveler;
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.join.join.dto.JoinLinkResponse;
 import com.largata.join.join.dto.JoinRequestSummaryResponse;
 import com.largata.join.join.service.JoinService;
@@ -22,46 +25,46 @@ import org.springframework.web.bind.annotation.RestController;
 class TripJoinController {
 
     private final JoinService join;
-    private final AuthorizationGuard guard;
 
-    TripJoinController(JoinService join, AuthorizationGuard guard) {
+    TripJoinController(JoinService join) {
         this.join = join;
-        this.guard = guard;
     }
 
 
     @GetMapping("/join-link")
-    JoinLinkResponse link(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        return JoinLinkResponse.of(join.linkFor(membership));
+    @Door(MEMBERSHIP_MUTABLE)
+    JoinLinkResponse link(@CurrentMember Membership member) {
+        return JoinLinkResponse.of(join.linkFor(member));
     }
 
 
     @GetMapping("/join-requests")
-    Page<JoinRequestSummaryResponse> queue(
-            @CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+    @Door(MEMBERSHIP_MUTABLE)
+    Page<JoinRequestSummaryResponse> queue(@CurrentMember Membership member) {
         return Page.exhausted(
-                join.queueFor(membership).stream().map(JoinRequestSummaryResponse::of).toList());
+                join.queueFor(Owner.of(member, NotTheTripOwnerException::toReadTheJoinQueue)).stream()
+                        .map(JoinRequestSummaryResponse::of)
+                        .toList());
     }
 
 
     @PostMapping("/join-requests/{requestId}/approve")
+    @Door(MEMBERSHIP_MUTABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void approve(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID requestId) {
-        join.approve(guard.requireMember(traveler.id(), itineraryId), requestId);
+    void approve(@CurrentMember Membership member, @PathVariable UUID requestId) {
+        join.approve(theOwnerAnswering(member), requestId);
     }
 
 
     @PostMapping("/join-requests/{requestId}/decline")
+    @Door(MEMBERSHIP_MUTABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void decline(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID requestId) {
-        join.decline(guard.requireMember(traveler.id(), itineraryId), requestId);
+    void decline(@CurrentMember Membership member, @PathVariable UUID requestId) {
+        join.decline(theOwnerAnswering(member), requestId);
+    }
+
+
+    private static Owner theOwnerAnswering(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toAnswerAJoinRequest);
     }
 }

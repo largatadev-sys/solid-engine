@@ -132,7 +132,7 @@ class TripDayPostcardContractIT extends ObjectStoreTestBase {
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
+                .isEqualTo("ITINERARY_NOT_FOUND");
 
         String otherTrip = rig.createTrip(owner, 2);
         postOnTripDay(owner, trip, rig.dayAt(otherTrip, 1), "{\"caption\":\"Elsewhere\"}", 1)
@@ -159,7 +159,7 @@ class TripDayPostcardContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripFreezesTheDayPostcardForItsOwner() {
+    void aDeletedTripIsNotFoundForATripRootedPostcard_forItsOwnerToo() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 2);
         start(owner, trip);
@@ -167,10 +167,10 @@ class TripDayPostcardContractIT extends ObjectStoreTestBase {
 
         postOnTripDay(owner, trip, rig.dayAt(trip, 1), "{\"caption\":\"Frozen\"}", 1)
                 .expectStatus()
-                .isEqualTo(409)
+                .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("TRIP_ARCHIVED");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 

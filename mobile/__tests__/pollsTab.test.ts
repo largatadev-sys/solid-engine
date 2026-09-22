@@ -51,11 +51,11 @@ describe('the Polls tab goes live on the shipped row — S2.1', () => {
     expect(screen).toMatch(/active === 'polls'/);
   });
 
-  it('hands the tab the archived flag, so the fence chrome is not a guess', () => {
+  it('hands the tab no archived flag — TW-2 deleted the notion (ADR-040)', () => {
     const screen = readFileSync(WORKSPACE_SCREEN, 'utf8');
     const mount = screen.slice(screen.indexOf("active === 'polls'"));
 
-    expect(mount.slice(0, 300)).toContain('archived');
+    expect(mount.slice(0, 300)).not.toContain('archived');
     expect(mount.slice(0, 300)).toContain('isOwner');
   });
 

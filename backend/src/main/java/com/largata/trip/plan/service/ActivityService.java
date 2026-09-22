@@ -2,8 +2,7 @@ package com.largata.trip.plan.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.room.Membership;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.common.tx.AfterCommit;
@@ -50,7 +49,6 @@ public class ActivityService {
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
-    private final WriteFence fence;
     private final Analytics analytics;
     private final PhotoService photos;
 
@@ -61,7 +59,6 @@ public class ActivityService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
-            WriteFence fence,
             Analytics analytics,
             PhotoService photos) {
         this.days = days;
@@ -70,7 +67,6 @@ public class ActivityService {
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
-        this.fence = fence;
         this.analytics = analytics;
         this.photos = photos;
     }
@@ -78,7 +74,6 @@ public class ActivityService {
 
     @Transactional
     public ActivityView create(Membership member, UUID dayId, ActivityFields fields) {
-        fence.requireEditable(member);
         editLease.requireNoForeignSession(member);
         requireDay(member.itineraryId(), dayId);
         if (activities.countByDayId(dayId) >= MAX_ACTIVITIES_PER_DAY) {
@@ -104,7 +99,8 @@ public class ActivityService {
 
 
     @Transactional
-    public ActivityView edit(Membership member, UUID dayId, UUID activityId, ActivityFields fields) {
+    public ActivityView edit(
+            Membership member, UUID dayId, UUID activityId, ActivityFields fields) {
         requireDay(member.itineraryId(), dayId);
         Activity activity = requireActivity(dayId, activityId);
         editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
@@ -148,8 +144,10 @@ public class ActivityService {
 
     @Transactional
     public DayView reorder(
-            Membership member, UUID dayId, List<UUID> expectedActivityIds, List<UUID> orderedActivityIds) {
-        fence.requireEditable(member);
+            Membership member,
+            UUID dayId,
+            List<UUID> expectedActivityIds,
+            List<UUID> orderedActivityIds) {
         editLease.requireNoForeignSession(member);
         Day day = requireDay(member.itineraryId(), dayId);
         List<Activity> current = activities.findByDayIdOrderBySortOrderAscIdAsc(dayId);
@@ -184,7 +182,8 @@ public class ActivityService {
 
 
     @Transactional
-    public ActivityView move(Membership member, UUID dayId, UUID activityId, UUID targetDayId) {
+    public ActivityView move(
+            Membership member, UUID dayId, UUID activityId, UUID targetDayId) {
         requireDay(member.itineraryId(), dayId);
         requireDay(member.itineraryId(), targetDayId);
         Activity activity = requireActivity(dayId, activityId);

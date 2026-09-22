@@ -54,11 +54,6 @@ describe('the row menu on your own row', () => {
     ]);
   });
 
-  it('still offers leave on an archived trip — S1.9 canon over the canvas caption', () => {
-    expect(labels(view({ isYou: true, viewerIsOwner: false, posture: 'archived' }))).toEqual([
-      LEAVE_TRIP_LABEL,
-    ]);
-  });
 });
 
 describe('the row menu a member sees on somebody else', () => {
@@ -67,10 +62,9 @@ describe('the row menu a member sees on somebody else', () => {
   });
 });
 
-describe('the row menu on a published or archived trip', () => {
+describe('the row menu on a published trip', () => {
   it('offers the owner nothing on somebody else’s row', () => {
     expect(labels(view({ posture: 'published' }))).toEqual([]);
-    expect(labels(view({ posture: 'archived' }))).toEqual([]);
   });
 
   it('still offers nothing once an offer is pending — the freeze covers transfer too', () => {

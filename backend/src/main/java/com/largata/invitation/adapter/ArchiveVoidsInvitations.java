@@ -1,7 +1,7 @@
 package com.largata.invitation.adapter;
 
 import com.largata.invitation.service.InvitationService;
-import com.largata.trip.api.TripArchived;
+import com.largata.trip.room.TripArchived;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;

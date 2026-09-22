@@ -3,9 +3,8 @@ package com.largata.poll;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.largata.common.authz.AudienceFence;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Role;
 import com.largata.poll.exception.PollExceptions;
 import com.largata.poll.service.PollBoard;
 import com.largata.poll.service.PollOptionView;
@@ -42,7 +41,6 @@ class PollLazyCloseIT extends PostgresTestBase {
     @Autowired private MutableClock clock;
     @Autowired private TripService itineraries;
     @Autowired private WorkspaceService workspaces;
-    @Autowired private AudienceFence audience;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TransactionTemplate transactions;
 
@@ -157,7 +155,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
 
     private PollView onlyPollOf(Membership member) {
-        PollBoard board = polls.board(audience.requireInAudience(member));
+        PollBoard board = polls.board(member);
         List<PollView> everyPoll =
                 java.util.stream.Stream.concat(board.active().stream(), board.completed().stream()).toList();
         assertThat(everyPoll).hasSize(1);
@@ -166,7 +164,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
 
     private List<UUID> winnersOf(Membership member, UUID pollId) {
-        PollBoard board = polls.board(audience.requireInAudience(member));
+        PollBoard board = polls.board(member);
         return java.util.stream.Stream.concat(board.active().stream(), board.completed().stream())
                 .filter(poll -> poll.id().equals(pollId))
                 .findFirst()

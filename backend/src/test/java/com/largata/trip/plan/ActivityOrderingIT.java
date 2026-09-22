@@ -3,8 +3,10 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import java.time.LocalTime;
 import java.util.List;
@@ -128,7 +130,7 @@ class ActivityOrderingIT extends PostgresTestBase {
     void crossDayMoveLandsTheActivityAtTheTargetsEnd() {
         Membership member = tripWithOneDay();
         UUID dayA = firstDayId(member.itineraryId());
-        DayView dayB = days.appendDay(member, "Day B");
+        DayView dayB = days.appendDay(asOwner(member), "Day B");
         activities.create(member, dayB.id(), named("Already on B"));
         ActivityView moving = activities.create(member, dayA, named("Moving from A"));
         editLease.acquire(member, LeaseSubject.activity(moving.id()));
@@ -145,12 +147,12 @@ class ActivityOrderingIT extends PostgresTestBase {
     void deletingADayLeavesTheOtherDaysActivityOrderIntact() {
         Membership member = tripWithOneDay();
         UUID day1 = firstDayId(member.itineraryId());
-        DayView day2 = days.appendDay(member, "Day 2");
+        DayView day2 = days.appendDay(asOwner(member), "Day 2");
         ActivityView x = activities.create(member, day2.id(), named("X"));
         ActivityView y = activities.create(member, day2.id(), named("Y"));
         editLease.acquire(member, LeaseSubject.day(day1));
 
-        days.deleteDay(member, day1);
+        days.deleteDay(asOwner(member), day1);
 
         UUID renumberedDay2 =
                 jdbc.queryForObject(
@@ -187,5 +189,9 @@ class ActivityOrderingIT extends PostgresTestBase {
     private List<UUID> orderedIds(UUID dayId) {
         return jdbc.queryForList(
                 "SELECT id FROM activity WHERE day_id = ? ORDER BY sort_order, id", UUID.class, dayId);
+    }
+
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

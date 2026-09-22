@@ -99,18 +99,16 @@ test('the cap itself is accepted — 2,000 is the limit, not the first refusal',
 });
 
 
-test('publishing closes chat for the owner and the member alike', async () => {
+test('publishing does not close chat — the owner and the member still send (TW-2 Q30)', async () => {
   await act('start');
   await act('complete');
   await act('publish');
 
   const asOwner = await send(owner, 'Owner after publishing');
-  expect(asOwner.status).toBe(409);
-  expect(asOwner.body.code).toBe('CHAT_CLOSED');
+  expect(asOwner.status).toBe(201);
 
   const asMember = await send(member, 'Member after publishing');
-  expect(asMember.status).toBe(409);
-  expect(asMember.body.code).toBe('CHAT_CLOSED');
+  expect(asMember.status).toBe(201);
 });
 
 

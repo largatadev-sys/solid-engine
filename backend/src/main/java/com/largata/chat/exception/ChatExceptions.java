@@ -1,21 +1,11 @@
 package com.largata.chat.exception;
 
-import com.largata.common.error.ConflictException;
 import com.largata.common.error.ValidationException;
 
 
 public final class ChatExceptions {
 
     private ChatExceptions() {}
-
-
-    public static final class ChatClosedException extends ConflictException {
-        public ChatClosedException() {
-            super(
-                    "CHAT_CLOSED",
-                    "This trip is published, so its chat is closed. Unpublish the trip to talk here again.");
-        }
-    }
 
 
     public static final class MessageBodyMissingException extends ValidationException {

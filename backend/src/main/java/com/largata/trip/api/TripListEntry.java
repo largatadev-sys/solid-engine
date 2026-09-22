@@ -1,7 +1,7 @@
 package com.largata.trip.api;
 
-import com.largata.common.authz.Role;
 import com.largata.common.geo.Pin;
+import com.largata.trip.room.Role;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;

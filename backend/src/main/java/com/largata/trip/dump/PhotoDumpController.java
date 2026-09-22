@@ -1,13 +1,11 @@
 package com.largata.trip.dump;
 
+import static com.largata.trip.room.Door.Rule.OPEN;
+
 import com.largata.common.api.Page;
-import com.largata.common.authz.AudienceFence;
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
-import com.largata.trip.dump.PhotoDumpService;
-import com.largata.trip.dump.PhotoDumpEntryResponse;
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
+import com.largata.trip.room.Membership;
 import java.io.IOException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -28,47 +26,34 @@ import org.springframework.web.multipart.MultipartFile;
 class PhotoDumpController {
 
     private final PhotoDumpService dump;
-    private final AuthorizationGuard guard;
-    private final AudienceFence audience;
 
-    PhotoDumpController(PhotoDumpService dump, AuthorizationGuard guard, AudienceFence audience) {
+    PhotoDumpController(PhotoDumpService dump) {
         this.dump = dump;
-        this.guard = guard;
-        this.audience = audience;
     }
 
 
     @PostMapping
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.CREATED)
-    PhotoDumpEntryResponse add(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @RequestPart("photo") MultipartFile photo)
+    PhotoDumpEntryResponse add(@CurrentMember Membership member, @RequestPart("photo") MultipartFile photo)
             throws IOException {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
         return PhotoDumpEntryResponse.of(dump.add(member, photo.getBytes()));
     }
 
 
     @GetMapping
     Page<PhotoDumpEntryResponse> list(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
+            @CurrentMember Membership member,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return dump.list(audience.requireInAudience(member), cursor, limit)
-                .map(PhotoDumpEntryResponse::of);
+        return dump.list(member, cursor, limit).map(PhotoDumpEntryResponse::of);
     }
 
 
     @DeleteMapping("/{photoId}")
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void remove(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID photoId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
+    void remove(@CurrentMember Membership member, @PathVariable UUID photoId) {
         dump.remove(member, photoId);
     }
 }

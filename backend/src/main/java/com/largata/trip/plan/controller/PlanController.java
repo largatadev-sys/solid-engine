@@ -1,15 +1,14 @@
 package com.largata.trip.plan.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
+import static com.largata.trip.room.Door.Rule.EDITABLE;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
+import com.largata.trip.room.Membership;
 import com.largata.trip.plan.service.PlanSaveService;
 import com.largata.trip.trip.dto.TripResponse;
 import com.largata.trip.plan.dto.SavePlanRequest;
 import jakarta.validation.Valid;
-import java.util.UUID;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,20 +22,15 @@ class PlanController {
 
     private final PlanSaveService plans;
     private final TripService itineraries;
-    private final AuthorizationGuard guard;
 
-    PlanController(PlanSaveService plans, TripService itineraries, AuthorizationGuard guard) {
+    PlanController(PlanSaveService plans, TripService itineraries) {
         this.plans = plans;
         this.itineraries = itineraries;
-        this.guard = guard;
     }
 
     @PutMapping
-    TripResponse save(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @Valid @RequestBody SavePlanRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
+    @Door(EDITABLE)
+    TripResponse save(@CurrentMember Membership member, @Valid @RequestBody SavePlanRequest request) {
         plans.save(member, request);
         return TripResponse.of(itineraries.viewPlan(member));
     }

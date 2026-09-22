@@ -1,8 +1,9 @@
 package com.largata.itinerary.service;
 
-import com.largata.common.authz.PublicationState;
+import com.largata.itinerary.api.PublishedItineraries;
 import com.largata.itinerary.entity.ItineraryObject;
 import com.largata.itinerary.repository.ItineraryObjectRepository;
+import com.largata.trip.room.PublicationState;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @Component
-class ItineraryBackedPublicationState implements PublicationState {
+class ItineraryBackedPublicationState implements PublicationState, PublishedItineraries {
 
     private final ItineraryObjectRepository objects;
 
@@ -44,15 +45,15 @@ class ItineraryBackedPublicationState implements PublicationState {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<LivePublication> liveFor(UUID tripId) {
+    public Optional<PublicationState.LivePublication> liveFor(UUID tripId) {
         return live(tripId)
-                .map(object -> new LivePublication(object.id(), object.publishedAt()));
+                .map(object -> new PublicationState.LivePublication(object.id(), object.publishedAt()));
     }
 
 
     @Override
     @Transactional(readOnly = true)
-    public Map<UUID, LivePublication> liveAmong(Collection<UUID> tripIds) {
+    public Map<UUID, LiveItinerary> liveAmong(Collection<UUID> tripIds) {
         if (tripIds.isEmpty()) {
             return Map.of();
         }
@@ -60,7 +61,7 @@ class ItineraryBackedPublicationState implements PublicationState {
                 .collect(
                         Collectors.toUnmodifiableMap(
                                 ItineraryObject::tripId,
-                                object -> new LivePublication(object.id(), object.publishedAt())));
+                                object -> new LiveItinerary(object.id(), object.publishedAt())));
     }
 
 

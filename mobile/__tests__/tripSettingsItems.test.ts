@@ -8,10 +8,8 @@ import {
 const OWNER = true;
 const COLLABORATOR = false;
 
-const draft = { published: false, archived: false };
-const published = { published: true, archived: false };
-const archived = { published: false, archived: true };
-const archivedAndPublished = { published: true, archived: true };
+const draft = { published: false };
+const published = { published: true };
 
 
 describe('the cog menu — role × editable × published (S4.25 artboard 1b)', () => {
@@ -31,14 +29,6 @@ describe('the cog menu — role × editable × published (S4.25 artboard 1b)', (
     expect(workspaceMenuItems(draft, COLLABORATOR)).toEqual([]);
   });
 
-  it('withholds Edit details on an archived trip, from the owner too', () => {
-    expect(workspaceMenuItems(archived, OWNER)).toEqual([]);
-  });
-
-  it('withholds Unpublish on an archived trip while View published survives', () => {
-    expect(workspaceMenuItems(archivedAndPublished, OWNER)).toEqual(['view-published']);
-  });
-
   it('never offers Edit details while the trip is published — publishing freezes editing', () => {
     expect(workspaceMenuItems(published, OWNER)).not.toContain('edit-details');
   });
@@ -53,12 +43,10 @@ describe('the cog itself — PARKED (founder, 2026-08-18: the pencil will do for
     expect(showsSettingsCog(published, OWNER)).toBe(false);
     expect(showsSettingsCog(published, COLLABORATOR)).toBe(false);
     expect(showsSettingsCog(draft, COLLABORATOR)).toBe(false);
-    expect(showsSettingsCog(archived, OWNER)).toBe(false);
   });
 
   it('keeps the visibility rule intact behind the flag, so unparking is one line', () => {
     expect(workspaceMenuItems(draft, OWNER)).toEqual(['edit-details']);
     expect(workspaceMenuItems(draft, COLLABORATOR)).toEqual([]);
-    expect(workspaceMenuItems(archived, OWNER)).toEqual([]);
   });
 });

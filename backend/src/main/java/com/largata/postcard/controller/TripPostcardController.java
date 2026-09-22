@@ -1,13 +1,13 @@
 package com.largata.postcard.controller;
 
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
+import com.largata.trip.room.Membership;
 import com.largata.postcard.dto.PostFromActivityRequest;
 import com.largata.postcard.dto.PostcardResponse;
 import com.largata.postcard.service.PostcardService;
-import com.largata.trip.exception.TripNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -26,40 +26,29 @@ import tools.jackson.databind.ObjectMapper;
 class TripPostcardController {
 
     private final PostcardService postcards;
-    private final AuthorizationGuard guard;
     private final ObjectMapper json;
 
-    TripPostcardController(PostcardService postcards, AuthorizationGuard guard, ObjectMapper json) {
+    TripPostcardController(PostcardService postcards, ObjectMapper json) {
         this.postcards = postcards;
-        this.guard = guard;
         this.json = json;
     }
 
 
     @PostMapping
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.CREATED)
     PostcardResponse post(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID tripId,
+            @CurrentMember Membership member,
             @PathVariable UUID activityId,
             @RequestPart(name = "postcard", required = false) String postcardJson,
             @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)
             throws IOException {
-        Membership member = requireMember(traveler, tripId);
         PostFromActivityRequest request =
                 postcardJson == null
                         ? new PostFromActivityRequest(null)
                         : json.readValue(postcardJson, PostFromActivityRequest.class);
         return PostcardResponse.of(
                 postcards.postFromActivity(
-                        member,
-                        activityId,
-                        request.caption(),
-                        PostcardController.bytesOf(devicePhotos)));
-    }
-
-
-    private Membership requireMember(Traveler traveler, UUID tripId) {
-        return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
+                        member, activityId, request.caption(), PostcardController.bytesOf(devicePhotos)));
     }
 }

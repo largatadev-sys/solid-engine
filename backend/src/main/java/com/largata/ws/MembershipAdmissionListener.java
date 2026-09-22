@@ -1,7 +1,7 @@
 package com.largata.ws;
 
-import com.largata.trip.api.MembershipArrived;
-import com.largata.trip.api.MembershipApi;
+import com.largata.trip.room.MembershipArrived;
+import com.largata.trip.room.MembershipApi;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;

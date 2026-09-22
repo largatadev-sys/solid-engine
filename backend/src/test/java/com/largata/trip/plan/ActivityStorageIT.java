@@ -3,8 +3,10 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -156,7 +158,7 @@ class ActivityStorageIT extends PostgresTestBase {
     void anActivityOfAnotherDayIsNotFound() {
         Membership member = tripWithOneDay();
         UUID dayA = firstDayId(member.itineraryId());
-        DayView dayB = days.appendDay(member, "Day B");
+        DayView dayB = days.appendDay(asOwner(member), "Day B");
         ActivityView onB = activities.create(member, dayB.id(), fields("On B", null, null));
 
         assertThatThrownBy(() -> activities.edit(member, dayA, onB.id(), fields("x", null, null)))
@@ -170,7 +172,7 @@ class ActivityStorageIT extends PostgresTestBase {
         activities.create(member, dayId, fields("Gone with the day", null, null));
         editLease.acquire(member, LeaseSubject.day(dayId));
 
-        days.deleteDay(member, dayId);
+        days.deleteDay(asOwner(member), dayId);
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM activity WHERE day_id = ?", Integer.class, dayId))
                 .as("V7's ON DELETE CASCADE takes the activities with the day")
@@ -190,5 +192,9 @@ class ActivityStorageIT extends PostgresTestBase {
     private UUID firstDayId(UUID itineraryId) {
         return jdbc.queryForObject(
                 "SELECT id FROM day WHERE itinerary_id = ? AND ordinal = 1", UUID.class, itineraryId);
+    }
+
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

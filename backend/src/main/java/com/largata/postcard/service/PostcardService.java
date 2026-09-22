@@ -2,8 +2,7 @@ package com.largata.postcard.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.TripArchivedException;
+import com.largata.trip.room.Membership;
 import com.largata.common.geo.Pin;
 import com.largata.common.tx.AfterCommit;
 import com.largata.diary.api.DiaryApi;
@@ -149,7 +148,7 @@ public class PostcardService {
     @Transactional
     public PostcardView postOnTripDay(
             Membership member, UUID tripDayId, String caption, List<byte[]> devicePhotos) {
-        TripFacts trip = requireWritableTrip(member);
+        TripFacts trip = tripOf(member);
         if (!trip.lifecycle().hasStarted()) {
             throw new TripNotStartedException();
         }
@@ -203,7 +202,7 @@ public class PostcardService {
     @Transactional
     public PostcardView postFromActivity(
             Membership member, UUID activityId, String caption, List<byte[]> devicePhotos) {
-        TripFacts trip = requireWritableTrip(member);
+        TripFacts trip = tripOf(member);
         if (!trip.lifecycle().hasStarted()) {
             throw new TripNotStartedException();
         }
@@ -277,15 +276,8 @@ public class PostcardService {
     }
 
 
-    private TripFacts requireWritableTrip(Membership member) {
-        TripFacts trip = trips.factsOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
-        if (!trip.archived()) {
-            return trip;
-        }
-        if (member.isOwner()) {
-            throw new TripArchivedException();
-        }
-        throw new TripNotFoundException();
+    private TripFacts tripOf(Membership member) {
+        return trips.factsOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
     }
 
 
@@ -308,7 +300,6 @@ public class PostcardService {
     @Transactional
     public PostcardView addPhotos(UUID authorId, UUID postcardId, List<byte[]> devicePhotos) {
         Postcard postcard = requireMine(authorId, postcardId);
-        requireWritable(postcard);
         if (devicePhotos.isEmpty()) {
             throw new PostcardNeedsAPhotoException();
         }
@@ -323,7 +314,6 @@ public class PostcardService {
     @Transactional
     public PostcardView removePhoto(UUID authorId, UUID postcardId, UUID photoId) {
         Postcard postcard = requireMine(authorId, postcardId);
-        requireWritable(postcard);
         Photo photo =
                 photos.find(photoId)
                         .filter(found -> found.subjectKind() == PhotoSubject.POSTCARD)
@@ -339,17 +329,9 @@ public class PostcardService {
     }
 
 
-    private void requireWritable(Postcard postcard) {
-        if (postcard.tripId() != null && trips.frozen(postcard.tripId())) {
-            throw new TripArchivedException();
-        }
-    }
-
-
     @Transactional
     public PostcardView recaption(UUID authorId, UUID postcardId, String caption) {
         Postcard postcard = requireMine(authorId, postcardId);
-        requireWritable(postcard);
         postcard.recaption(caption, Instant.now(clock));
         Postcard saved = postcards.saveAndFlush(postcard);
         emit(saved, "postcard_recaptioned");
@@ -360,7 +342,6 @@ public class PostcardService {
     @Transactional
     public PostcardView place(UUID authorId, UUID postcardId, String place, Pin pin) {
         Postcard postcard = requireMine(authorId, postcardId);
-        requireWritable(postcard);
         postcard.moveTo(place, pin, Instant.now(clock));
         Postcard saved = postcards.saveAndFlush(postcard);
         emit(saved, "postcard_placed");

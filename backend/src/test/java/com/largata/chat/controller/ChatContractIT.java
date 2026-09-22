@@ -115,16 +115,13 @@ class ChatContractIT extends PostgresTestBase {
 
 
     @Test
-    void publishingClosesChatForOwnerAndMemberAlike() {
+    void publishingDoesNotCloseChat_theOwnerAndTheMemberStillSend() {
         Fixture trip = tripWithAMember();
         sendAs(trip.owner(), trip, "Before publishing");
         publish(trip);
 
-        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("Owner"))))
-                .isEqualTo("CHAT_CLOSED");
-        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.member(), body("Member"))))
-                .as("decision 3 - publishing closes chat for everyone, not just non-owners")
-                .isEqualTo("CHAT_CLOSED");
+        rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("Owner")).expectStatus().isCreated();
+        rig.send(HttpMethod.POST, messagesUri(trip), trip.member(), body("Member")).expectStatus().isCreated();
     }
 
 
@@ -157,15 +154,15 @@ class ChatContractIT extends PostgresTestBase {
 
 
     @Test
-    void archivingFreezesTheThreadHonestlyForTheOwnerAndInvisiblyForAMember() {
+    void deletingTheTripClosesTheThreadInvisiblyForEverybody_theOwnerIncluded() {
         Fixture trip = tripWithAMember();
         sendAs(trip.owner(), trip, "Best trip yet.");
 
         archive(trip);
 
-        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("More"))))
-                .as("the WriteFence answers the owner honestly")
-                .isEqualTo("TRIP_ARCHIVED");
+        rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("More"))
+                .expectStatus()
+                .isNotFound();
         rig.send(HttpMethod.POST, messagesUri(trip), trip.member(), body("More"))
                 .expectStatus()
                 .isNotFound();
@@ -202,7 +199,7 @@ class ChatContractIT extends PostgresTestBase {
 
         assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("   "))))
                 .as("the fences run in spec order, so an unwritable trip refuses before the body is judged")
-                .isEqualTo("TRIP_ARCHIVED");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 

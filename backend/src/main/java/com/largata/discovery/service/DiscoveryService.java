@@ -13,7 +13,7 @@ import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.ItineraryDiscoveryApi;
 import com.largata.itinerary.api.ItineraryDiscoveryApi.DiscoverableItinerary;
 import com.largata.itinerary.api.ItineraryDiscoveryApi.DiscoveryQuery;
-import com.largata.trip.api.MembershipApi;
+import com.largata.trip.room.MembershipApi;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;

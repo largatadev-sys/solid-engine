@@ -251,7 +251,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 

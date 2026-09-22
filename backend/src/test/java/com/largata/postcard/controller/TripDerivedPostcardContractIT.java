@@ -230,7 +230,7 @@ class TripDerivedPostcardContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void onAnArchivedTripWithdrawalCrossesTheFreezeButRecaptionRespectsIt() {
+    void theAuthorStillEditsAndDeletesTheirPostcardAfterTheTripIsDeleted() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
         UUID activity = rig.addActivity(owner, trip, rig.dayAt(trip, 1), "Frozen memory");
@@ -251,10 +251,10 @@ class TripDerivedPostcardContractIT extends ObjectStoreTestBase {
                 .body("{\"caption\":\"After\"}")
                 .exchange()
                 .expectStatus()
-                .isEqualTo(409)
+                .isOk()
                 .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("TRIP_ARCHIVED");
+                .jsonPath("$.caption")
+                .isEqualTo("After");
         rest.delete()
                 .uri("/v1/postcards/" + postcardId)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(member))
