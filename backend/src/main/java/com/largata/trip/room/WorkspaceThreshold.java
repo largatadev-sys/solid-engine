@@ -2,6 +2,7 @@ package com.largata.trip.room;
 
 import com.largata.identity.web.CurrentTravelers;
 import com.largata.trip.exception.ItineraryPublishedException;
+import com.largata.trip.exception.MalformedTripIdException;
 import com.largata.trip.exception.MembershipFrozenException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -61,7 +62,7 @@ public final class WorkspaceThreshold implements HandlerInterceptor {
         try {
             return Optional.of(UUID.fromString(segments[3]));
         } catch (IllegalArgumentException notAnId) {
-            return Optional.empty();
+            throw new MalformedTripIdException();
         }
     }
 

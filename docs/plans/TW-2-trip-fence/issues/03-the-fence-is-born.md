@@ -17,6 +17,8 @@
 
 ## Comments
 
+**Mechanism replaced at ticket 14 (grilling rounds 5–6, 2026-09-22).** The proofs this ticket built were retired before the merge in favour of the Threshold — the same two rules applied once at the route, the handler declaring its door. Every decision on this ticket stands; the shape of the code it describes is history, and ticket 14 carries the current one.
+
 **Closed 2026-09-18.** The fence exists, the old doors are thin delegates over it, and the story's one behaviour change landed in one place and reached every module at once.
 
 **The fence.** `TripFence` in `trip.api`: a final class taking `ArchiveState` and `PublicationState` and nothing else — no Spring, no database, wired by one `@Bean` in the workspace slice. Six doors, five proofs, each nested with a **private constructor**, so a forged proof is a compile error rather than a convention. `Standing` is implemented by `Membership` and by `Owner`; the state doors are generic in the standing and return a proof typed by it, so `Editable<Owner>` and `Editable<Membership>` are different types and a service that needs an owner cannot be handed a member's proof. `Owner.of(membership, refusal)` is a value, not a door — it throws or exists — and because Java evaluates an argument before the call, `fence.editable(Owner.of(m, …))` checks role before state **by construction** rather than by a rule anyone has to remember. `TripFenceTest` walks it with two lambdas and no container: 13 cases over every door × room state × publication state × standing, both refusal-overload paths, and both `Owner.of` outcomes.

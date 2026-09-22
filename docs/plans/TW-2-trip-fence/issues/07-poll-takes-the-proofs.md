@@ -14,6 +14,8 @@
 
 ## Comments
 
+**Mechanism replaced at ticket 14 (grilling rounds 5–6, 2026-09-22).** The proofs this ticket built were retired before the merge in favour of the Threshold — the same two rules applied once at the route, the handler declaring its door. Every decision on this ticket stands; the shape of the code it describes is history, and ticket 14 carries the current one.
+
 **Closed 2026-09-18, with tickets 06–10 in one commit** — they are the same mechanical change five times over and share one proof, so splitting the verification would have meant running the suite five times to learn the same thing. Each ticket's own ACs are ticked against the work below.
 
 **The proof they are behaviour-neutral: the assertion-line diff over all five reports ONE changed assertion**, and it is `invitations.invite(owner, …)` → `invitations.invite(mutable(owner), …)` — a proof wrap with the assertion's value untouched. Nothing else in any test moved.

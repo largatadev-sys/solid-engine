@@ -87,8 +87,8 @@ public class MembershipService {
         boolean leaving = caller.travelerId().equals(targetTravelerId);
 
         if (!leaving) {
-            Owner.of(caller, NotTheTripOwnerException::toRemoveAMember);
             fence.requireOpenRoom(itineraryId);
+            Owner.of(caller, NotTheTripOwnerException::toRemoveAMember);
             fence.requireUnfrozen(itineraryId, MembershipFrozenException::new);
         }
         if (leaving && caller.isOwner()) {

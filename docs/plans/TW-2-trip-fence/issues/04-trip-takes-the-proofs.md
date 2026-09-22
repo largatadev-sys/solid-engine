@@ -14,6 +14,8 @@
 
 ## Comments
 
+**Mechanism replaced at ticket 14 (grilling rounds 5–6, 2026-09-22).** The proofs this ticket built were retired before the merge in favour of the Threshold — the same two rules applied once at the route, the handler declaring its door. Every decision on this ticket stands; the shape of the code it describes is history, and ticket 14 carries the current one.
+
 **Closed 2026-09-18.** Every act in the trip module now demands its door in its signature, and no production class in `trip` calls `WriteFence` or `AudienceFence`.
 
 **The mapping, as built.** Plan writes, the editing session's acquire/renew/require and the plan save take `Editable`; `appendDay`/`deleteDay` take `Editable<Owner>` (they were owner-only already, via a private `requireOwnerOfWritableTrip` that is now deleted); lifecycle `start`/`complete` take `Editable<Owner>`; the photo dump's list takes `InAudience` and its upload/remove `Writable`; the ownership slice's owner-only acts take `MembershipMutable<Owner>` and accept/decline `MembershipMutable`; **archive, unarchive and destroy take `Owner` alone**; self-leave keeps its bare `Membership` (S1.9), and `release` keeps one too — a holder must be able to let go of a lock on a deleted trip, which `ArchiveWriteFenceIT` pins.

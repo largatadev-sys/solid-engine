@@ -13,6 +13,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTravelers;
 import com.largata.trip.exception.ItineraryNotFoundException;
 import com.largata.trip.exception.ItineraryPublishedException;
+import com.largata.trip.exception.MalformedTripIdException;
 import com.largata.trip.exception.MembershipFrozenException;
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -67,7 +68,9 @@ class WorkspaceThresholdTest {
                 .contains(TRIP);
 
         assertThat(WorkspaceThreshold.tripIdIn("/v1/trips")).isEmpty();
-        assertThat(WorkspaceThreshold.tripIdIn("/v1/trips/not-an-id/days")).isEmpty();
+        assertThatThrownBy(() -> WorkspaceThreshold.tripIdIn("/v1/trips/not-an-id/days"))
+                .as("a trip route whose id is not one is still a trip route, and it was a 400 before the threshold")
+                .isInstanceOf(MalformedTripIdException.class);
         assertThat(WorkspaceThreshold.tripIdIn("/v1/itineraries/" + TRIP)).isEmpty();
         assertThat(WorkspaceThreshold.tripIdIn("/v1/itineraries/" + TRIP + "/diary/entries")).isEmpty();
         assertThat(WorkspaceThreshold.tripIdIn("/v1/join/some-token")).isEmpty();

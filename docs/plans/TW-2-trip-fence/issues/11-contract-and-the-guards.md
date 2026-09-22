@@ -17,6 +17,8 @@
 
 ## Comments
 
+**Mechanism replaced at ticket 14 (grilling rounds 5–6, 2026-09-22).** The proofs this ticket built were retired before the merge in favour of the Threshold — the same two rules applied once at the route, the handler declaring its door. Every decision on this ticket stands; the shape of the code it describes is history, and ticket 14 carries the current one.
+
 **Closed 2026-09-18.** The expand–contract's contract step: `WriteFence`, `AudienceFence`, the old top-level `InAudience`, `TripArchivedException` and `TripApi.frozen` are **deleted**, and four guards now make forgetting a build failure.
 
 **The last holdout was the legacy diary module** (`postcard.legacy`), which ticket 05 did not touch because its acts are diary acts rather than record reads. Its seven writes take `Writable`, its two reads take the fence's `InAudience`, and `requireRoomForAPhoto` stops re-checking what the proof already carries.
