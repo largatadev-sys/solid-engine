@@ -1,11 +1,12 @@
 package com.largata.itinerary.controller;
 
-import com.largata.trip.room.AuthorizationGuard;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.PublicFace;
 import com.largata.trip.room.Owner;
-import java.util.function.Supplier;
-import com.largata.trip.room.TripFence;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
@@ -15,7 +16,6 @@ import com.largata.itinerary.dto.ItineraryPageResponse;
 import com.largata.itinerary.service.ItineraryObjectService;
 import com.largata.itinerary.service.ItineraryForkService;
 import com.largata.itinerary.service.ItineraryPageService;
-import com.largata.trip.exception.TripNotFoundException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,41 +29,31 @@ import org.springframework.web.bind.annotation.RestController;
 class ItineraryController {
 
     private final ItineraryObjectService itineraries;
-    private final AuthorizationGuard guard;
     private final ItineraryPageService pages;
     private final ItineraryForkService forks;
-    private final TripFence fence;
 
     ItineraryController(
-            ItineraryObjectService itineraries,
-            AuthorizationGuard guard,
-            ItineraryPageService pages,
-            ItineraryForkService forks,
-            TripFence fence) {
+            ItineraryObjectService itineraries, ItineraryPageService pages, ItineraryForkService forks) {
         this.itineraries = itineraries;
-        this.guard = guard;
-        this.fence = fence;
         this.pages = pages;
         this.forks = forks;
     }
 
 
     @PostMapping("/v1/trips/{tripId}/publish")
-    ItineraryObjectResponse publish(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
+    @Door(OPEN)
+    ItineraryObjectResponse publish(@CurrentMember Membership member) {
         ItineraryObject published =
-                itineraries.publish(
-                        fence.writable(
-                                theOwner(traveler, tripId, NotTheTripOwnerException::toPublishTheTrip)));
+                itineraries.publish(Owner.of(member, NotTheTripOwnerException::toPublishTheTrip));
         return ItineraryObjectResponse.of(published, itineraries.planTreeOf(published));
     }
 
 
     @PostMapping("/v1/trips/{tripId}/unpublish")
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
-        itineraries.unpublish(
-                fence.writable(
-                        theOwner(traveler, tripId, NotTheTripOwnerException::toUnpublishTheTrip)));
+    void unpublish(@CurrentMember Membership member) {
+        itineraries.unpublish(Owner.of(member, NotTheTripOwnerException::toUnpublishTheTrip));
     }
 
 
@@ -74,18 +64,13 @@ class ItineraryController {
 
 
     @GetMapping("/v1/trips/{tripId}/preview")
-    ItineraryPageResponse preview(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
-        Membership owner = requireMember(traveler, tripId);
+    ItineraryPageResponse preview(@CurrentMember Membership member) {
         return pages.previewOf(
-                tripId,
-                traveler.id(),
-                traveler.id(),
+                member.itineraryId(),
+                member.travelerId(),
+                member.travelerId(),
                 itineraries.snapshotOfLivePlan(
-                        fence.inAudience(
-                                theOwner(
-                                        traveler,
-                                        tripId,
-                                        NotTheTripOwnerException::toPreviewThePublishedPage))));
+                        Owner.of(member, NotTheTripOwnerException::toPreviewThePublishedPage)));
     }
 
 
@@ -110,15 +95,5 @@ class ItineraryController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void destroy(@CurrentTraveler Traveler traveler, @PathVariable UUID objectId) {
         itineraries.destroy(traveler.id(), objectId);
-    }
-
-
-    private Membership requireMember(Traveler traveler, UUID tripId) {
-        return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
-    }
-
-    private Owner theOwner(
-            Traveler traveler, UUID tripId, Supplier<NotTheTripOwnerException> refusal) {
-        return fence.owner(requireMember(traveler, tripId), refusal);
     }
 }

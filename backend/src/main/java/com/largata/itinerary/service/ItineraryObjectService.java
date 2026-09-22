@@ -5,7 +5,6 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.exception.ItineraryNotFoundException;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.api.ItineraryApi;
 import com.largata.itinerary.entity.ItineraryObject;
@@ -61,8 +60,8 @@ public class ItineraryObjectService implements ItineraryApi {
 
 
     @Transactional
-    public ItineraryObject publish(TripFence.Writable<Owner> writable) {
-        Membership member = writable.member();
+    public ItineraryObject publish(Owner owner) {
+        Membership member = owner.membership();
         TripPlan plan = plans.planOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
         if (!plan.lifecycle().admitsPublishing()) {
             throw new TripNotCompleteException(plan.lifecycle());
@@ -93,16 +92,16 @@ public class ItineraryObjectService implements ItineraryApi {
 
 
     @Transactional(readOnly = true)
-    public String snapshotOfLivePlan(TripFence.InAudience<Owner> audience) {
-        Membership owner = audience.member();
+    public String snapshotOfLivePlan(Owner theOwner) {
+        Membership owner = theOwner.membership();
         TripPlan plan = plans.planOf(owner.itineraryId()).orElseThrow(TripNotFoundException::new);
         return json.writeValueAsString(PlanSnapshot.of(plan));
     }
 
 
     @Transactional
-    public void unpublish(TripFence.Writable<Owner> writable) {
-        Membership member = writable.member();
+    public void unpublish(Owner owner) {
+        Membership member = owner.membership();
         Optional<ItineraryObject> live =
                 objects.findByTripId(member.itineraryId())
                         .filter(candidate -> !candidate.isRetired());
