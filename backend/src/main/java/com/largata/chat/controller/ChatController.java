@@ -1,19 +1,16 @@
 package com.largata.chat.controller;
 
-import com.largata.chat.exception.ChatExceptions;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
 import com.largata.chat.dto.ChatMessageResponse;
 import com.largata.chat.dto.SendMessageRequest;
 import com.largata.chat.service.ChatService;
 import com.largata.common.api.Page;
-import com.largata.trip.room.TripFence;
-import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
-import com.largata.common.security.CurrentTraveler;
-import com.largata.identity.Traveler;
-import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,38 +23,25 @@ import org.springframework.web.bind.annotation.RestController;
 class ChatController {
 
     private final ChatService chat;
-    private final AuthorizationGuard guard;
-    private final TripFence fence;
 
-    ChatController(ChatService chat, AuthorizationGuard guard, TripFence fence) {
+    ChatController(ChatService chat) {
         this.chat = chat;
-        this.guard = guard;
-        this.fence = fence;
     }
 
 
     @PostMapping
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.CREATED)
-    ChatMessageResponse send(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @RequestBody SendMessageRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ChatMessageResponse.of(
-                chat.send(
-                        fence.editable(member, ChatExceptions.ChatClosedException::new),
-                        request.body()));
+    ChatMessageResponse send(@CurrentMember Membership member, @RequestBody SendMessageRequest request) {
+        return ChatMessageResponse.of(chat.send(member, request.body()));
     }
 
 
     @GetMapping
     Page<ChatMessageResponse> thread(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
+            @CurrentMember Membership member,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return chat.thread(fence.inAudience(member), cursor, limit)
-                .map(ChatMessageResponse::of);
+        return chat.thread(member, cursor, limit).map(ChatMessageResponse::of);
     }
 }

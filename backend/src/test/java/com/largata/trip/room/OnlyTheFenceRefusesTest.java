@@ -39,8 +39,8 @@ class OnlyTheFenceRefusesTest {
                 .as("the two freeze refusals are the fence's answers, and a surface that constructs"
                         + " one has re-derived the fact behind it — which is exactly the nine hand"
                         + " copies TW-2 set out to remove. A surface that wants its OWN wording says"
-                        + " so through the refusal overload (chat's CHAT_CLOSED, join's"
-                        + " JOIN_LINK_CLOSED) rather than deciding for itself when to throw")
+                        + " so through the refusal overload (join's JOIN_LINK_CLOSED) rather than"
+                        + " deciding for itself when to throw")
                 .isEmpty();
     }
 

@@ -115,16 +115,13 @@ class ChatContractIT extends PostgresTestBase {
 
 
     @Test
-    void publishingClosesChatForOwnerAndMemberAlike() {
+    void publishingDoesNotCloseChat_theOwnerAndTheMemberStillSend() {
         Fixture trip = tripWithAMember();
         sendAs(trip.owner(), trip, "Before publishing");
         publish(trip);
 
-        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("Owner"))))
-                .isEqualTo("CHAT_CLOSED");
-        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.member(), body("Member"))))
-                .as("decision 3 - publishing closes chat for everyone, not just non-owners")
-                .isEqualTo("CHAT_CLOSED");
+        rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("Owner")).expectStatus().isCreated();
+        rig.send(HttpMethod.POST, messagesUri(trip), trip.member(), body("Member")).expectStatus().isCreated();
     }
 
 

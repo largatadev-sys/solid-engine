@@ -100,20 +100,38 @@ class ChatDeliveryIT extends PostgresTestBase {
     @Test
     void aRefusedSendBroadcastsNothingBecauseTheBridgeWaitsForTheCommit() throws Exception {
         String owner = tripRig.travelerWithHandle("chatown" + WsRig.tag());
+        String stranger = tripRig.travelerWithHandle("chatstr" + WsRig.tag());
+        String trip = tripRig.createTrip(owner, 2);
+
+        try (WsTestClient listener = rig.connectAs(owner)) {
+            subscribe(listener, trip);
+
+            tripRig.send(HttpMethod.POST, messagesUri(trip), stranger, body("Not in this room"))
+                    .expectStatus()
+                    .isNotFound();
+
+            assertThat(listener.receivedNothingWithin(SILENCE))
+                    .as("a refused write fires no event. The failure mode is a frame"
+                            + " arriving, so the wait is bounded rather than indefinite")
+                    .isTrue();
+        }
+    }
+
+
+    @Test
+    void publishingDoesNotCloseChat_aSendOnAPublishedTripIsDelivered() throws Exception {
+        String owner = tripRig.travelerWithHandle("chatpub" + WsRig.tag());
         String trip = tripRig.createTrip(owner, 2);
         publish(owner, trip);
 
         try (WsTestClient listener = rig.connectAs(owner)) {
             subscribe(listener, trip);
 
-            tripRig.send(HttpMethod.POST, messagesUri(trip), owner, body("Closed chat"))
-                    .expectStatus()
-                    .isEqualTo(409);
+            String sentId = sendAs(owner, trip, "Still talking after publishing.");
 
-            assertThat(listener.receivedNothingWithin(SILENCE))
-                    .as("decision 3 - a CHAT_CLOSED write fires no event. The failure mode is a frame"
-                            + " arriving, so the wait is bounded rather than indefinite")
-                    .isTrue();
+            assertThat(json.readTree(listener.awaitFrame()).path("payload").path("id").asString())
+                    .as("TW-2 round 6 Q30 - the thread stays open through publish and the bridge carries it")
+                    .isEqualTo(sentId);
         }
     }
 

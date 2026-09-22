@@ -9,7 +9,6 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -52,8 +51,7 @@ public class ChatService {
 
 
     @Transactional
-    public ChatMessageView send(TripFence.Editable<?> editable, String body) {
-        Membership member = editable.member();
+    public ChatMessageView send(Membership member, String body) {
         ChatMessage appended =
                 messages.save(
                         ChatMessage.appended(
@@ -68,8 +66,8 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public Page<ChatMessageView> thread(
-            TripFence.InAudience<?> audience, String cursor, Integer requestedLimit) {
-        UUID itineraryId = audience.member().itineraryId();
+            Membership member, String cursor, Integer requestedLimit) {
+        UUID itineraryId = member.itineraryId();
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);
         List<ChatMessage> found =
