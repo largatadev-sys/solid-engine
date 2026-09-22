@@ -6,6 +6,7 @@ import com.largata.trip.room.AuthorizationGuard;
 import com.largata.trip.room.Membership;
 import com.largata.itinerary.api.PublishedItineraries;
 import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.MembershipFrozenException;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
@@ -95,8 +96,7 @@ public class InvitationService implements InvitationApi {
 
 
     @Transactional
-    public PendingInvitation invite(TripFence.MembershipMutable<?> mutable, String rawEmail) {
-        Membership member = mutable.member();
+    public PendingInvitation invite(Membership member, String rawEmail) {
         UUID itineraryId = member.itineraryId();
         UUID workspaceId = authorizeIssuance(member);
         String email = normalize(rawEmail);
@@ -124,8 +124,7 @@ public class InvitationService implements InvitationApi {
 
     @Transactional
     public PendingInvitation inviteByHandle(
-            TripFence.MembershipMutable<?> mutable, String rawHandle) {
-        Membership member = mutable.member();
+            Membership member, String rawHandle) {
         UUID itineraryId = member.itineraryId();
         UUID workspaceId = authorizeIssuance(member);
         TravelerSummary invitee =
@@ -193,7 +192,9 @@ public class InvitationService implements InvitationApi {
                 invitations.findById(invitationId).orElseThrow(InvitationNotFoundException::new);
         UUID itineraryId =
                 workspaces.tripIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
-        fence.membershipMutable(guard.requireMember(travelerId, itineraryId));
+        guard.requireMember(travelerId, itineraryId);
+        fence.requireOpenRoom(itineraryId);
+        fence.requireUnfrozen(itineraryId, MembershipFrozenException::new);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
@@ -351,7 +352,7 @@ public class InvitationService implements InvitationApi {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException("You are already a member of this trip.");
         }
-        fence.unfrozen(itineraryId);
+        fence.requireUnfrozen(itineraryId, MembershipFrozenException::new);
 
         Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);

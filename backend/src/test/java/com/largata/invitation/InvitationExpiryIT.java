@@ -4,9 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.largata.support.Proofs;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.trip.room.Role;
 import com.largata.common.security.VerifiedContact;
 import com.largata.invitation.entity.Invitation;
@@ -34,7 +32,6 @@ class InvitationExpiryIT extends PostgresTestBase {
     private static final Duration VALIDITY = Invitation.VALIDITY;
 
     @Autowired private InvitationService invitations;
-    @Autowired private TripFence fence;
     @Autowired private MutableClock clock;
     @Autowired private TripService itineraries;
 
@@ -42,7 +39,7 @@ class InvitationExpiryIT extends PostgresTestBase {
     void acceptingAnInvitationThatOutlivedItsValidityIsRefused() {
         Membership owner = ownerOfAFreshTrip();
         String email = freshEmail();
-        UUID invitationId = invitations.invite(mutable(owner), email).id();
+        UUID invitationId = invitations.invite(owner, email).id();
         VerifiedContact invitee = new VerifiedContact(email, true);
 
         clock.advance(VALIDITY.plusSeconds(1));
@@ -55,7 +52,7 @@ class InvitationExpiryIT extends PostgresTestBase {
     void anInvitationStillInsideItsValidityIsAccepted() {
         Membership owner = ownerOfAFreshTrip();
         String email = freshEmail();
-        UUID invitationId = invitations.invite(mutable(owner), email).id();
+        UUID invitationId = invitations.invite(owner, email).id();
         VerifiedContact invitee = new VerifiedContact(email, true);
 
         clock.advance(VALIDITY.minusSeconds(1));
@@ -68,7 +65,7 @@ class InvitationExpiryIT extends PostgresTestBase {
     void theInboxStopsListingAnInvitationOnceItHasExpired() {
         Membership owner = ownerOfAFreshTrip();
         String email = freshEmail();
-        invitations.invite(mutable(owner), email);
+        invitations.invite(owner, email);
         VerifiedContact invitee = new VerifiedContact(email, true);
 
         assertThat(invitations.inbox(invitee, UUID.randomUUID())).hasSize(1);
@@ -81,7 +78,7 @@ class InvitationExpiryIT extends PostgresTestBase {
     @Test
     void theOwnersPendingListStopsShowingAnInvitationOnceItHasExpired() {
         Membership owner = ownerOfAFreshTrip();
-        invitations.invite(mutable(owner), freshEmail());
+        invitations.invite(owner, freshEmail());
 
         assertThat(invitations.pendingInvitations(owner)).hasSize(1);
 
@@ -94,14 +91,14 @@ class InvitationExpiryIT extends PostgresTestBase {
     void theSameEmailCanBeInvitedAgainOnceTheFirstInvitationHasExpired() {
         Membership owner = ownerOfAFreshTrip();
         String email = freshEmail();
-        invitations.invite(mutable(owner), email);
+        invitations.invite(owner, email);
 
         assertThatExceptionOfType(InvitationExceptions.InvitationAlreadyPendingException.class)
-                .isThrownBy(() -> invitations.invite(mutable(owner), email));
+                .isThrownBy(() -> invitations.invite(owner, email));
 
         clock.advance(VALIDITY.plusSeconds(1));
 
-        assertThatCode(() -> invitations.invite(mutable(owner), email)).doesNotThrowAnyException();
+        assertThatCode(() -> invitations.invite(owner, email)).doesNotThrowAnyException();
     }
 
 
@@ -123,13 +120,5 @@ class InvitationExpiryIT extends PostgresTestBase {
         MutableClock invitationExpiryTestClock() {
             return new MutableClock(Instant.parse("2026-07-29T10:00:00Z"));
         }
-    }
-
-    private Proofs proofs() {
-        return new Proofs(fence);
-    }
-
-    private TripFence.MembershipMutable<Membership> mutable(Membership member) {
-        return proofs().mutable(member);
     }
 }
