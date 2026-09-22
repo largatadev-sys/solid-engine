@@ -97,8 +97,7 @@ public class JoinService {
 
 
     @Transactional
-    public JoinLinkView linkFor(TripFence.MembershipMutable<?> mutable) {
-        Membership member = mutable.member();
+    public JoinLinkView linkFor(Membership member) {
         UUID workspaceId = workspaceIdOf(member.itineraryId());
         JoinLink link = links.findByWorkspaceId(workspaceId).orElseGet(() -> mint(workspaceId));
         return new JoinLinkView(
@@ -205,10 +204,8 @@ public class JoinService {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException();
         }
-        if (workspaces.isArchived(itineraryId)) {
-            throw new LinkClosedException();
-        }
-        fence.unfrozen(itineraryId, LinkClosedException::new);
+        fence.requireOpenRoom(itineraryId, LinkClosedException::new);
+        fence.requireUnfrozen(itineraryId, LinkClosedException::new);
         if (!contact.verified()) {
             throw new EmailNotVerifiedException();
         }
@@ -239,8 +236,8 @@ public class JoinService {
 
 
     @Transactional(readOnly = true)
-    public List<PendingJoinRequest> queueFor(TripFence.MembershipMutable<Owner> mutable) {
-        Membership owner = mutable.member();
+    public List<PendingJoinRequest> queueFor(Owner theOwner) {
+        Membership owner = theOwner.membership();
         List<JoinRequest> rows =
                 requests.findByWorkspaceIdAndStatusOrderByCreatedAtAsc(
                         workspaceIdOf(owner.itineraryId()), JoinRequestStatus.PENDING);
@@ -344,8 +341,8 @@ public class JoinService {
 
 
     @Transactional
-    public void approve(TripFence.MembershipMutable<Owner> mutable, UUID requestId) {
-        Membership owner = mutable.member();
+    public void approve(Owner theOwner, UUID requestId) {
+        Membership owner = theOwner.membership();
         JoinRequest asked = answerable(owner, requestId);
         UUID itineraryId = owner.itineraryId();
         Instant now = Instant.now(clock);
@@ -367,8 +364,8 @@ public class JoinService {
 
 
     @Transactional
-    public void decline(TripFence.MembershipMutable<Owner> mutable, UUID requestId) {
-        Membership owner = mutable.member();
+    public void decline(Owner theOwner, UUID requestId) {
+        Membership owner = theOwner.membership();
         JoinRequest asked = answerable(owner, requestId);
         asked.decline(owner.travelerId(), Instant.now(clock));
         requests.saveAndFlush(asked);

@@ -22,11 +22,16 @@ public final class TripFence {
 
 
     public void requireOpenRoom(UUID tripId) {
-        if (tripId == null) {
-            throw new IllegalArgumentException("An act on a trip names the trip");
+        requireOpenRoom(tripId, ItineraryNotFoundException::new);
+    }
+
+
+    public void requireOpenRoom(UUID tripId, Supplier<? extends RuntimeException> refusal) {
+        if (tripId == null || refusal == null) {
+            throw new IllegalArgumentException("An act on a trip names the trip and its refusal");
         }
         if (room.isArchived(tripId)) {
-            throw new ItineraryNotFoundException();
+            throw refusal.get();
         }
     }
 
