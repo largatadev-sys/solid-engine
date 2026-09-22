@@ -1,9 +1,9 @@
 package com.largata.trip.dump;
 
 import com.largata.common.api.Page;
-import com.largata.trip.api.TripFence;
-import com.largata.trip.api.AuthorizationGuard;
-import com.largata.trip.api.Membership;
+import com.largata.trip.room.TripFence;
+import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.Membership;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.dump.PhotoDumpService;

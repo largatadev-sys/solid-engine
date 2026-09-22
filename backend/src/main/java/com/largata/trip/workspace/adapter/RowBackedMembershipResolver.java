@@ -1,7 +1,7 @@
 package com.largata.trip.workspace.adapter;
 
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.MembershipResolver;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.MembershipResolver;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;

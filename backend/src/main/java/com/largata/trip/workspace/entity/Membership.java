@@ -1,6 +1,6 @@
 package com.largata.trip.workspace.entity;
 
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

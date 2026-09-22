@@ -1,6 +1,6 @@
 package com.largata.trip.workspace.adapter;
 
-import com.largata.trip.api.ArchiveState;
+import com.largata.trip.room.ArchiveState;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import com.largata.trip.workspace.repository.WorkspaceRepository;

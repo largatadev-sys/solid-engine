@@ -27,7 +27,7 @@ class ChatModuleBoundaryTest {
                     .and(not(resideInAPackage(CHAT + "..")))
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
-                    .and(not(resideInAPackage("com.largata.trip.api..")))
+                    .and(not(resideInAPackage("com.largata.trip.room..")))
                     .and(not(resideInAPackage("com.largata.trip.exception..")))
                     .and(not(resideInAPackage("com.largata.ws..")));
 

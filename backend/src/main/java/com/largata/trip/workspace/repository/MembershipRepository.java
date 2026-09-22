@@ -1,7 +1,7 @@
 package com.largata.trip.workspace.repository;
 
-import com.largata.trip.api.Role;
-import com.largata.trip.api.MembershipView;
+import com.largata.trip.room.Role;
+import com.largata.trip.room.MembershipView;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +25,7 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
 
 
     @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
-            + "AND m.workspace.state = :state AND m.role = com.largata.trip.api.Role.OWNER")
+            + "AND m.workspace.state = :state AND m.role = com.largata.trip.room.Role.OWNER")
     List<UUID> findOwnedItineraryIdsIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
 
 
@@ -35,7 +35,7 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
 
 
     @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
-            + "AND m.workspace.state <> :state AND m.role = com.largata.trip.api.Role.OWNER")
+            + "AND m.workspace.state <> :state AND m.role = com.largata.trip.room.Role.OWNER")
     List<UUID> findOwnedItineraryIdsNotIn(
             @Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
 
@@ -43,12 +43,12 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
 
 
     @Query("SELECT m.travelerId FROM Membership m WHERE m.workspace.itineraryId = :itineraryId "
-            + "AND m.role = com.largata.trip.api.Role.OWNER")
+            + "AND m.role = com.largata.trip.room.Role.OWNER")
     Optional<UUID> findOwnerTravelerId(@Param("itineraryId") UUID itineraryId);
 
 
     @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
-            + "AND m.role = com.largata.trip.api.Role.OWNER AND m.workspace.itineraryId IN :itineraryIds")
+            + "AND m.role = com.largata.trip.room.Role.OWNER AND m.workspace.itineraryId IN :itineraryIds")
     List<UUID> findOwnedItineraryIdsAmong(
             @Param("travelerId") UUID travelerId, @Param("itineraryIds") Collection<UUID> itineraryIds);
 
@@ -59,7 +59,7 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
     List<MemberCountRow> countMembersAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
-    @Query("SELECT new com.largata.trip.api.MembershipView(m.travelerId, m.role, m.joinedAt) "
+    @Query("SELECT new com.largata.trip.room.MembershipView(m.travelerId, m.role, m.joinedAt) "
             + "FROM Membership m WHERE m.workspace.itineraryId = :itineraryId ORDER BY m.joinedAt ASC")
     List<MembershipView> findMembers(@Param("itineraryId") UUID itineraryId);
 

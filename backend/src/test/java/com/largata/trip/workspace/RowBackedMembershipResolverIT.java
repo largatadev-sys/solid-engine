@@ -3,10 +3,10 @@ package com.largata.trip.workspace;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.room.AuthorizationGuard;
 import com.largata.trip.exception.ItineraryNotFoundException;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;

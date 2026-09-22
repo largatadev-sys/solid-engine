@@ -3,7 +3,7 @@ package com.largata.trip.plan.service;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.trip.api.ActivityFacts;
-import com.largata.trip.api.Membership;
+import com.largata.trip.room.Membership;
 import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripPlan;

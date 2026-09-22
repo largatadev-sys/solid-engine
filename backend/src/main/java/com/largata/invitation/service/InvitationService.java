@@ -2,10 +2,10 @@ package com.largata.invitation.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.trip.api.AuthorizationGuard;
-import com.largata.trip.api.Membership;
+import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.Membership;
 import com.largata.itinerary.api.PublishedItineraries;
-import com.largata.trip.api.TripFence;
+import com.largata.trip.room.TripFence;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
@@ -22,8 +22,8 @@ import com.largata.invitation.exception.InvitationExceptions.InvitationExpiredEx
 import com.largata.invitation.exception.InvitationExceptions.InvitationNotFoundException;
 import com.largata.invitation.exception.InvitationExceptions.InvitationNotPendingException;
 import com.largata.invitation.repository.InvitationRepository;
-import com.largata.trip.api.MembershipApi;
-import com.largata.trip.api.MembershipView;
+import com.largata.trip.room.MembershipApi;
+import com.largata.trip.room.MembershipView;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;
 import java.time.Clock;

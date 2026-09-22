@@ -3,7 +3,7 @@ package com.largata.itinerary.service;
 import com.largata.itinerary.api.PublishedItineraries;
 import com.largata.itinerary.entity.ItineraryObject;
 import com.largata.itinerary.repository.ItineraryObjectRepository;
-import com.largata.trip.api.PublicationState;
+import com.largata.trip.room.PublicationState;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;

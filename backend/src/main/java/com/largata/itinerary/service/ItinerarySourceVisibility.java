@@ -2,7 +2,7 @@ package com.largata.itinerary.service;
 
 import com.largata.itinerary.repository.ItineraryObjectRepository;
 import com.largata.trip.api.ForkApi;
-import com.largata.trip.api.MembershipApi;
+import com.largata.trip.room.MembershipApi;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

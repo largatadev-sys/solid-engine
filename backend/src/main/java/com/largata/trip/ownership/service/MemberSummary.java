@@ -1,6 +1,6 @@
 package com.largata.trip.ownership.service;
 
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Role;
 import java.time.Instant;
 import java.util.UUID;
 

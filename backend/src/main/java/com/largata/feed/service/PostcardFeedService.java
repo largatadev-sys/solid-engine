@@ -14,7 +14,7 @@ import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.postcard.api.SharedEntries;
-import com.largata.trip.api.MembershipApi;
+import com.largata.trip.room.MembershipApi;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;
 import java.util.List;

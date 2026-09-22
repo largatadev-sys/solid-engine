@@ -1,4 +1,4 @@
-package com.largata.trip.api;
+package com.largata.trip.room;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

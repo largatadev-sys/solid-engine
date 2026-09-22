@@ -27,7 +27,7 @@ class TripModuleBoundaryTest {
 
     private static final String PUBLISHED_CONTRACT = TRIP + ".api..";
 
-    private static final String[] FRONT_DOOR = {PUBLISHED_CONTRACT, TRIP + ".exception.."};
+    private static final String[] FRONT_DOOR = {PUBLISHED_CONTRACT, TRIP + ".room..", TRIP + ".exception.."};
 
     private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
             resideInAPackage("com.largata..")

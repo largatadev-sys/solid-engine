@@ -1,4 +1,4 @@
-package com.largata.trip.api;
+package com.largata.trip.room;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,7 +15,7 @@ class OnlyTheFenceRefusesTest {
 
     private static final Path MAIN = Path.of("src/main/java/com/largata");
 
-    private static final Path THE_FENCE = MAIN.resolve("trip/api/TripFence.java");
+    private static final Path THE_FENCE = MAIN.resolve("trip/room/TripFence.java");
 
     private static final Path THE_OWNER_REFUSAL =
             MAIN.resolve("trip/exception/NotTheTripOwnerException.java");

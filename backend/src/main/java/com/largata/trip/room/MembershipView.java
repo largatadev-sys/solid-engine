@@ -1,4 +1,4 @@
-package com.largata.trip.api;
+package com.largata.trip.room;
 
 import java.time.Instant;
 import java.util.UUID;

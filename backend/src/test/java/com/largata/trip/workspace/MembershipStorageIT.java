@@ -3,7 +3,7 @@ package com.largata.trip.workspace;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.time.Instant;

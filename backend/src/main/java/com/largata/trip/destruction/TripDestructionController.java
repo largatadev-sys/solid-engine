@@ -1,8 +1,8 @@
 package com.largata.trip.destruction;
 
-import com.largata.trip.api.AuthorizationGuard;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.Owner;
+import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;

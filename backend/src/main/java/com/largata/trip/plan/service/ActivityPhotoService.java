@@ -1,7 +1,7 @@
 package com.largata.trip.plan.service;
 
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.TripFence;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.TripFence;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;

@@ -1,7 +1,7 @@
 package com.largata.trip.trip.adapter;
 
-import com.largata.trip.api.PublicationState;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.PublicationState;
+import com.largata.trip.room.Role;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

@@ -26,7 +26,8 @@ class MyTripsModuleBoundaryTest {
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
                     .and(not(resideInAPackage("com.largata.itinerary.api..")))
-                    .and(not(resideInAPackage("com.largata.trip.api..")));
+                    .and(not(resideInAPackage("com.largata.trip.api..")))
+                    .and(not(resideInAPackage("com.largata.trip.room..")));
 
     private final JavaClasses largata =
             new ClassFileImporter()

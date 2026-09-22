@@ -1,10 +1,10 @@
 package com.largata.join.join.controller;
 
 import com.largata.common.api.Page;
-import com.largata.trip.api.AuthorizationGuard;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.Owner;
-import com.largata.trip.api.TripFence;
+import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.room.TripFence;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.identity.Traveler;

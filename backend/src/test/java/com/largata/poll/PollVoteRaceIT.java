@@ -3,9 +3,9 @@ package com.largata.poll;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.Proofs;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.TripFence;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.TripFence;
+import com.largata.trip.room.Role;
 import com.largata.poll.service.PollService;
 import com.largata.poll.service.PollView;
 import com.largata.support.PostgresTestBase;

@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.largata.support.Proofs;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.TripFence;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.TripFence;
+import com.largata.trip.room.Role;
 import com.largata.common.security.VerifiedContact;
 import com.largata.invitation.entity.Invitation;
 import com.largata.invitation.exception.InvitationExceptions;

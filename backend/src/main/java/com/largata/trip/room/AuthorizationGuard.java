@@ -1,4 +1,4 @@
-package com.largata.trip.api;
+package com.largata.trip.room;
 
 import com.largata.trip.exception.ItineraryNotFoundException;
 import java.util.Optional;

@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.support.Proofs;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.Owner;
-import com.largata.trip.api.TripFence;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.Owner;
+import com.largata.trip.room.TripFence;
+import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
 import java.time.Instant;

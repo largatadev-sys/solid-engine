@@ -1,8 +1,8 @@
 package com.largata.trip.workspace.adapter;
 
-import com.largata.trip.api.ArchiveState;
-import com.largata.trip.api.PublicationState;
-import com.largata.trip.api.TripFence;
+import com.largata.trip.room.ArchiveState;
+import com.largata.trip.room.PublicationState;
+import com.largata.trip.room.TripFence;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

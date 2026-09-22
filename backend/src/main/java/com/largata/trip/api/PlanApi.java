@@ -1,5 +1,6 @@
 package com.largata.trip.api;
 
+import com.largata.trip.room.Membership;
 import java.util.Optional;
 import java.util.UUID;
 

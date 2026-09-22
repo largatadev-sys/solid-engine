@@ -1,7 +1,7 @@
 package com.largata.trip.trip.service;
 
 import com.largata.common.api.Page;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Role;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripListEntry;

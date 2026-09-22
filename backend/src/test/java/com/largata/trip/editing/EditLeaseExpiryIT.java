@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.largata.support.Proofs;
-import com.largata.trip.api.Membership;
-import com.largata.trip.api.TripFence;
-import com.largata.trip.api.Role;
+import com.largata.trip.room.Membership;
+import com.largata.trip.room.TripFence;
+import com.largata.trip.room.Role;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
 import java.time.Duration;

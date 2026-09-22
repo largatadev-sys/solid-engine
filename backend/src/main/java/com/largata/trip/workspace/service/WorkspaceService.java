@@ -1,9 +1,9 @@
 package com.largata.trip.workspace.service;
 
-import com.largata.trip.api.Role;
-import com.largata.trip.api.MembershipApi;
-import com.largata.trip.api.MembershipArrived;
-import com.largata.trip.api.MembershipView;
+import com.largata.trip.room.Role;
+import com.largata.trip.room.MembershipApi;
+import com.largata.trip.room.MembershipArrived;
+import com.largata.trip.room.MembershipView;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
