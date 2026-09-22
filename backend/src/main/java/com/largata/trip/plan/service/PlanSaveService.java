@@ -3,7 +3,6 @@ package com.largata.trip.plan.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.trip.plan.dto.SavePlanRequest;
 import com.largata.trip.api.PlanSaved;
@@ -83,9 +82,8 @@ public class PlanSaveService {
 
 
     @Transactional
-    public long save(TripFence.Editable<?> editable, SavePlanRequest request) {
-        Membership member = editable.member();
-        editLease.requireSessionHeldBy(editable);
+    public long save(Membership member, SavePlanRequest request) {
+        editLease.requireSessionHeldBy(member);
 
         UUID itineraryId = member.itineraryId();
         long committed = planVersion.currentVersion(itineraryId);

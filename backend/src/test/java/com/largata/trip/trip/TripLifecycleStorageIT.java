@@ -3,10 +3,9 @@ package com.largata.trip.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.support.Proofs;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.api.TripLifecycle;
@@ -27,7 +26,6 @@ import com.largata.trip.trip.service.TripService;
 class TripLifecycleStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
-    @Autowired private TripFence fence;
     @Autowired private JdbcTemplate jdbc;
 
 
@@ -40,11 +38,11 @@ class TripLifecycleStorageIT extends PostgresTestBase {
                 .isEqualTo("UPCOMING");
         assertThat(TripLifecycle.UPCOMING.wireName()).isEqualTo("upcoming");
 
-        itineraries.start(editableOwner(owner));
+        itineraries.start(asOwner(owner));
         assertThat(storedState(owner.itineraryId())).isEqualTo("ONGOING");
         assertThat(TripLifecycle.ONGOING.wireName()).isEqualTo("ongoing");
 
-        itineraries.complete(editableOwner(owner));
+        itineraries.complete(asOwner(owner));
         assertThat(storedState(owner.itineraryId())).isEqualTo("COMPLETED");
         assertThat(TripLifecycle.COMPLETED.wireName()).isEqualTo("completed");
     }
@@ -102,7 +100,7 @@ class TripLifecycleStorageIT extends PostgresTestBase {
     void theAggregateItselfRefusesASkipEdge() {
         Membership owner = tripOwnedByFreshTraveler();
 
-        assertThatThrownBy(() -> itineraries.complete(editableOwner(owner)))
+        assertThatThrownBy(() -> itineraries.complete(asOwner(owner)))
                 .isInstanceOf(IllegalStateTransitionException.class)
                 .hasMessageContaining("upcoming")
                 .hasMessageContaining("completed");
@@ -122,11 +120,7 @@ class TripLifecycleStorageIT extends PostgresTestBase {
         return new Membership(ownerId, itinerary.id(), Role.OWNER);
     }
 
-    private Proofs proofs() {
-        return new Proofs(fence);
-    }
-
-    private TripFence.Editable<Owner> editableOwner(Membership member) {
-        return proofs().editableOwner(member);
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

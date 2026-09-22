@@ -6,6 +6,7 @@ import com.largata.trip.room.Membership;
 import com.largata.trip.room.Role;
 import com.largata.trip.room.Owner;
 import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.MembershipFrozenException;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerService;
@@ -86,7 +87,9 @@ public class MembershipService {
         boolean leaving = caller.travelerId().equals(targetTravelerId);
 
         if (!leaving) {
-            fence.membershipMutable(fence.owner(caller, NotTheTripOwnerException::toRemoveAMember));
+            Owner.of(caller, NotTheTripOwnerException::toRemoveAMember);
+            fence.requireOpenRoom(itineraryId);
+            fence.requireUnfrozen(itineraryId, MembershipFrozenException::new);
         }
         if (leaving && caller.isOwner()) {
             throw new OwnerCannotLeaveException();
@@ -196,8 +199,8 @@ public class MembershipService {
 
 
     @Transactional
-    public void offerOwnership(TripFence.MembershipMutable<Owner> mutable, UUID targetTravelerId) {
-        Membership owner = mutable.member();
+    public void offerOwnership(Owner theOwner, UUID targetTravelerId) {
+        Membership owner = theOwner.membership();
         UUID itineraryId = owner.itineraryId();
         if (owner.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
@@ -224,8 +227,8 @@ public class MembershipService {
 
 
     @Transactional
-    public void revokeOwnershipOffer(TripFence.MembershipMutable<Owner> mutable) {
-        Membership owner = mutable.member();
+    public void revokeOwnershipOffer(Owner theOwner) {
+        Membership owner = theOwner.membership();
         UUID itineraryId = owner.itineraryId();
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);
@@ -241,8 +244,7 @@ public class MembershipService {
 
 
     @Transactional
-    public void acceptOwnershipOffer(TripFence.MembershipMutable<?> mutable) {
-        Membership caller = mutable.member();
+    public void acceptOwnershipOffer(Membership caller) {
         OwnershipOffer offer = requireOfferFor(caller);
         UUID itineraryId = caller.itineraryId();
         UUID newOwnerId = caller.travelerId();
@@ -283,8 +285,7 @@ public class MembershipService {
 
 
     @Transactional
-    public void declineOwnershipOffer(TripFence.MembershipMutable<?> mutable) {
-        Membership caller = mutable.member();
+    public void declineOwnershipOffer(Membership caller) {
         OwnershipOffer offer = requireOfferFor(caller);
         offer.decline(Instant.now());
         offers.saveAndFlush(offer);

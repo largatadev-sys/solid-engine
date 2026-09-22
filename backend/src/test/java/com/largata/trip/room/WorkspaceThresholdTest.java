@@ -51,6 +51,20 @@ class WorkspaceThresholdTest {
 
         @ReachesClosedRoom
         void undoWithoutADoor() {}
+
+        @PublicFace
+        void publishedPageByTripId() {}
+    }
+
+
+    @Test
+    void theTripsPublicFaceIsNotTheRoomsAndAStrangerPassesUntouched() {
+        WorkspaceThreshold threshold = threshold(STRANGER, true, true, UndeclaredWrites.REFUSED);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/trips/" + TRIP + "/itinerary");
+
+        assertThat(threshold.preHandle(request, new MockHttpServletResponse(), handler("publishedPageByTripId")))
+                .isTrue();
+        assertThat(request.getAttribute(WorkspaceThreshold.MEMBERSHIP_ATTRIBUTE)).isNull();
     }
 
 

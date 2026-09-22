@@ -3,10 +3,9 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.support.Proofs;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
@@ -28,7 +27,6 @@ import com.largata.trip.editing.service.EditLeaseService;
 class DayStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
-    @Autowired private TripFence fence;
     @Autowired private DayService days;
     @Autowired private EditLeaseService editLease;
     @Autowired private JdbcTemplate jdbc;
@@ -53,7 +51,7 @@ class DayStorageIT extends PostgresTestBase {
     void appendingTakesTheNextOrdinal() {
         Membership member = ownerOf(itineraries.create(UUID.randomUUID(), "Cebu", "Cebu", null, null, null, 2));
 
-        days.appendDay(editableOwner(member), "Arrival");
+        days.appendDay(asOwner(member), "Arrival");
 
         assertThat(ordinalsOf(member.itineraryId())).containsExactly(1, 2, 3);
     }
@@ -64,9 +62,9 @@ class DayStorageIT extends PostgresTestBase {
         Trip trip = itineraries.create(UUID.randomUUID(), "Palawan", "Palawan", null, null, null, 5);
         Membership member = ownerOf(trip);
         UUID thirdDay = dayIdAtOrdinal(trip.id(), 3);
-        editLease.acquire(editable(member), LeaseSubject.day(thirdDay));
+        editLease.acquire(member, LeaseSubject.day(thirdDay));
 
-        days.deleteDay(editableOwner(member), thirdDay);
+        days.deleteDay(asOwner(member), thirdDay);
 
         assertThat(ordinalsOf(trip.id()))
                 .as("the hole at 3 closes; the rest slide down")
@@ -116,15 +114,7 @@ class DayStorageIT extends PostgresTestBase {
         return new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
     }
 
-    private Proofs proofs() {
-        return new Proofs(fence);
-    }
-
-    private TripFence.Editable<Membership> editable(Membership member) {
-        return proofs().editable(member);
-    }
-
-    private TripFence.Editable<Owner> editableOwner(Membership member) {
-        return proofs().editableOwner(member);
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

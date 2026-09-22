@@ -132,7 +132,7 @@ class TripDayPostcardContractIT extends ObjectStoreTestBase {
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
+                .isEqualTo("ITINERARY_NOT_FOUND");
 
         String otherTrip = rig.createTrip(owner, 2);
         postOnTripDay(owner, trip, rig.dayAt(otherTrip, 1), "{\"caption\":\"Elsewhere\"}", 1)

@@ -1,7 +1,6 @@
 package com.largata.trip.plan.service;
 
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -55,10 +54,9 @@ public class ActivityPhotoService {
 
 
     @Transactional
-    public Photo add(TripFence.Editable<?> editable, UUID activityId, byte[] uploaded) {
-        Membership member = editable.member();
+    public Photo add(Membership member, UUID activityId, byte[] uploaded) {
         requireActivityOfTrip(member, activityId);
-        editLease.requireHeldBy(editable, LeaseSubject.activity(activityId));
+        editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
 
         if (photos.countOf(PhotoSubject.ACTIVITY, activityId) >= MAX_PHOTOS_PER_ACTIVITY) {
             throw new TooManyActivityPhotosException(MAX_PHOTOS_PER_ACTIVITY);
@@ -74,10 +72,9 @@ public class ActivityPhotoService {
 
 
     @Transactional
-    public void remove(TripFence.Editable<?> editable, UUID activityId, UUID photoId) {
-        Membership member = editable.member();
+    public void remove(Membership member, UUID activityId, UUID photoId) {
         requireActivityOfTrip(member, activityId);
-        editLease.requireHeldBy(editable, LeaseSubject.activity(activityId));
+        editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
 
         Photo photo = photos.find(photoId).orElseThrow(PhotoNotFoundException::new);
         if (photo.subjectKind() != PhotoSubject.ACTIVITY || !photo.subjectId().equals(activityId)) {

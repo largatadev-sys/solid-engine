@@ -3,10 +3,9 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.support.Proofs;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.room.Role;
 import com.largata.support.PostgresTestBase;
 import java.time.LocalTime;
@@ -32,7 +31,6 @@ import com.largata.trip.plan.service.DayView;
 class ActivityOrderingIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
-    @Autowired private TripFence fence;
     @Autowired private DayService days;
     @Autowired private ActivityService activities;
     @Autowired private EditLeaseService editLease;
@@ -43,8 +41,8 @@ class ActivityOrderingIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
 
-        ActivityView late = activities.create(editable(member), dayId, timed("Dinner", LocalTime.of(20, 0)));
-        ActivityView early = activities.create(editable(member), dayId, timed("Breakfast", LocalTime.of(7, 0)));
+        ActivityView late = activities.create(member, dayId, timed("Dinner", LocalTime.of(20, 0)));
+        ActivityView early = activities.create(member, dayId, timed("Breakfast", LocalTime.of(7, 0)));
 
         List<UUID> order = orderedIds(dayId);
         assertThat(order)
@@ -56,11 +54,11 @@ class ActivityOrderingIT extends PostgresTestBase {
     void reorderPersistsToTheClientGivenOrder() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView a = activities.create(editable(member), dayId, named("A"));
-        ActivityView b = activities.create(editable(member), dayId, named("B"));
-        ActivityView c = activities.create(editable(member), dayId, named("C"));
+        ActivityView a = activities.create(member, dayId, named("A"));
+        ActivityView b = activities.create(member, dayId, named("B"));
+        ActivityView c = activities.create(member, dayId, named("C"));
 
-        activities.reorder(editable(member), dayId, List.of(a.id(), b.id(), c.id()), List.of(c.id(), a.id(), b.id()));
+        activities.reorder(member, dayId, List.of(a.id(), b.id(), c.id()), List.of(c.id(), a.id(), b.id()));
 
         assertThat(orderedIds(dayId)).containsExactly(c.id(), a.id(), b.id());
     }
@@ -69,11 +67,11 @@ class ActivityOrderingIT extends PostgresTestBase {
     void aReorderMissingAnActivityIsRejected() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView a = activities.create(editable(member), dayId, named("A"));
-        ActivityView b = activities.create(editable(member), dayId, named("B"));
+        ActivityView a = activities.create(member, dayId, named("A"));
+        ActivityView b = activities.create(member, dayId, named("B"));
 
         assertThatThrownBy(
-                        () -> activities.reorder(editable(member), dayId, List.of(a.id(), b.id()), List.of(a.id())))
+                        () -> activities.reorder(member, dayId, List.of(a.id(), b.id()), List.of(a.id())))
                 .isInstanceOf(com.largata.common.error.ValidationException.class);
     }
 
@@ -81,12 +79,12 @@ class ActivityOrderingIT extends PostgresTestBase {
     void aReorderListingAForeignActivityIsRejected() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView a = activities.create(editable(member), dayId, named("A"));
+        ActivityView a = activities.create(member, dayId, named("A"));
 
         assertThatThrownBy(
                         () ->
                                 activities.reorder(
-                                        editable(member), dayId, List.of(a.id()), List.of(a.id(), UUID.randomUUID())))
+                                        member, dayId, List.of(a.id()), List.of(a.id(), UUID.randomUUID())))
                 .isInstanceOf(com.largata.common.error.ValidationException.class);
     }
 
@@ -94,16 +92,16 @@ class ActivityOrderingIT extends PostgresTestBase {
     void aReorderBuiltOnAStaleOrderingIsRefusedRatherThanSilentlyWinning() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView a = activities.create(editable(member), dayId, named("A"));
-        ActivityView b = activities.create(editable(member), dayId, named("B"));
+        ActivityView a = activities.create(member, dayId, named("A"));
+        ActivityView b = activities.create(member, dayId, named("B"));
         List<UUID> whatTheSlowClientBelieves = List.of(a.id(), b.id());
 
-        activities.reorder(editable(member), dayId, whatTheSlowClientBelieves, List.of(b.id(), a.id()));
+        activities.reorder(member, dayId, whatTheSlowClientBelieves, List.of(b.id(), a.id()));
 
         assertThatThrownBy(
                         () ->
                                 activities.reorder(
-                                        editable(member), dayId, whatTheSlowClientBelieves, List.of(a.id(), b.id())))
+                                        member, dayId, whatTheSlowClientBelieves, List.of(a.id(), b.id())))
                 .isInstanceOf(StaleReorderException.class);
         assertThat(orderedIds(dayId))
                 .as("the first reorder is not overwritten by the stale one")
@@ -114,14 +112,14 @@ class ActivityOrderingIT extends PostgresTestBase {
     void aReorderBuiltOnAStaleSetIsRefused() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView a = activities.create(editable(member), dayId, named("A"));
+        ActivityView a = activities.create(member, dayId, named("A"));
         List<UUID> whatTheSlowClientBelieves = List.of(a.id());
-        ActivityView addedMeanwhile = activities.create(editable(member), dayId, named("B"));
+        ActivityView addedMeanwhile = activities.create(member, dayId, named("B"));
 
         assertThatThrownBy(
                         () ->
                                 activities.reorder(
-                                        editable(member),
+                                        member,
                                         dayId,
                                         whatTheSlowClientBelieves,
                                         List.of(addedMeanwhile.id(), a.id())))
@@ -132,12 +130,12 @@ class ActivityOrderingIT extends PostgresTestBase {
     void crossDayMoveLandsTheActivityAtTheTargetsEnd() {
         Membership member = tripWithOneDay();
         UUID dayA = firstDayId(member.itineraryId());
-        DayView dayB = days.appendDay(editableOwner(member), "Day B");
-        activities.create(editable(member), dayB.id(), named("Already on B"));
-        ActivityView moving = activities.create(editable(member), dayA, named("Moving from A"));
-        editLease.acquire(editable(member), LeaseSubject.activity(moving.id()));
+        DayView dayB = days.appendDay(asOwner(member), "Day B");
+        activities.create(member, dayB.id(), named("Already on B"));
+        ActivityView moving = activities.create(member, dayA, named("Moving from A"));
+        editLease.acquire(member, LeaseSubject.activity(moving.id()));
 
-        ActivityView moved = activities.move(editable(member), dayA, moving.id(), dayB.id());
+        ActivityView moved = activities.move(member, dayA, moving.id(), dayB.id());
 
         assertThat(orderedIds(dayA)).as("gone from the source day").isEmpty();
         assertThat(orderedIds(dayB.id())).as("landed last on the target day").endsWith(moved.id());
@@ -149,12 +147,12 @@ class ActivityOrderingIT extends PostgresTestBase {
     void deletingADayLeavesTheOtherDaysActivityOrderIntact() {
         Membership member = tripWithOneDay();
         UUID day1 = firstDayId(member.itineraryId());
-        DayView day2 = days.appendDay(editableOwner(member), "Day 2");
-        ActivityView x = activities.create(editable(member), day2.id(), named("X"));
-        ActivityView y = activities.create(editable(member), day2.id(), named("Y"));
-        editLease.acquire(editable(member), LeaseSubject.day(day1));
+        DayView day2 = days.appendDay(asOwner(member), "Day 2");
+        ActivityView x = activities.create(member, day2.id(), named("X"));
+        ActivityView y = activities.create(member, day2.id(), named("Y"));
+        editLease.acquire(member, LeaseSubject.day(day1));
 
-        days.deleteDay(editableOwner(member), day1);
+        days.deleteDay(asOwner(member), day1);
 
         UUID renumberedDay2 =
                 jdbc.queryForObject(
@@ -193,15 +191,7 @@ class ActivityOrderingIT extends PostgresTestBase {
                 "SELECT id FROM activity WHERE day_id = ? ORDER BY sort_order, id", UUID.class, dayId);
     }
 
-    private Proofs proofs() {
-        return new Proofs(fence);
-    }
-
-    private TripFence.Editable<Membership> editable(Membership member) {
-        return proofs().editable(member);
-    }
-
-    private TripFence.Editable<Owner> editableOwner(Membership member) {
-        return proofs().editableOwner(member);
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

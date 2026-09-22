@@ -1,13 +1,15 @@
 package com.largata.trip.ownership.controller;
 
+import static com.largata.trip.room.Door.Rule.MEMBERSHIP_MUTABLE;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
 import com.largata.common.api.Page;
-import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
-import com.largata.trip.exception.NotTheTripOwnerException;
-import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
+import com.largata.trip.room.Owner;
+import com.largata.trip.room.ReachesClosedRoom;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.ownership.service.MembershipService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -29,78 +31,60 @@ import com.largata.trip.ownership.dto.OwnershipOfferRequest;
 class TripMembershipController {
 
     private final MembershipService memberships;
-    private final AuthorizationGuard guard;
-    private final TripFence fence;
 
-    TripMembershipController(
-            MembershipService memberships,
-            AuthorizationGuard guard,
-            TripFence fence) {
+    TripMembershipController(MembershipService memberships) {
         this.memberships = memberships;
-        this.guard = guard;
-        this.fence = fence;
     }
 
 
     @GetMapping("/members")
-    Page<MemberResponse> members(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        fence.inAudience(membership);
-        UUID offeredTo = memberships.pendingOfferTargetIn(membership).orElse(null);
+    Page<MemberResponse> members(@CurrentMember Membership member) {
+        UUID offeredTo = memberships.pendingOfferTargetIn(member).orElse(null);
         return Page.exhausted(
-                memberships.members(membership).stream()
+                memberships.members(member).stream()
                         .map(m -> MemberResponse.of(m, m.travelerId().equals(offeredTo)))
                         .toList());
     }
 
 
     @PostMapping("/ownership-offer")
+    @Door(MEMBERSHIP_MUTABLE)
     @ResponseStatus(HttpStatus.CREATED)
-    void offerOwnership(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @Valid @RequestBody OwnershipOfferRequest request) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+    void offerOwnership(@CurrentMember Membership member, @Valid @RequestBody OwnershipOfferRequest request) {
         memberships.offerOwnership(
-                fence.membershipMutable(
-                        fence.owner(membership, NotTheTripOwnerException::toOfferOwnership)),
-                request.travelerId());
+                Owner.of(member, NotTheTripOwnerException::toOfferOwnership), request.travelerId());
     }
 
 
     @DeleteMapping("/ownership-offer")
+    @Door(MEMBERSHIP_MUTABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void revokeOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.revokeOwnershipOffer(
-                fence.membershipMutable(
-                        fence.owner(membership, NotTheTripOwnerException::toRevokeAnOffer)));
+    void revokeOwnershipOffer(@CurrentMember Membership member) {
+        memberships.revokeOwnershipOffer(Owner.of(member, NotTheTripOwnerException::toRevokeAnOffer));
     }
 
 
     @PostMapping("/ownership-offer/accept")
+    @Door(MEMBERSHIP_MUTABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void acceptOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.acceptOwnershipOffer(fence.membershipMutable(membership));
+    void acceptOwnershipOffer(@CurrentMember Membership member) {
+        memberships.acceptOwnershipOffer(member);
     }
 
 
     @PostMapping("/ownership-offer/decline")
+    @Door(MEMBERSHIP_MUTABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void declineOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.declineOwnershipOffer(fence.membershipMutable(membership));
+    void declineOwnershipOffer(@CurrentMember Membership member) {
+        memberships.declineOwnershipOffer(member);
     }
 
 
     @DeleteMapping("/members/{travelerId}")
+    @Door(OPEN)
+    @ReachesClosedRoom
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void endMembership(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID travelerId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        memberships.depart(membership, travelerId);
+    void endMembership(@CurrentMember Membership member, @PathVariable UUID travelerId) {
+        memberships.depart(member, travelerId);
     }
 }

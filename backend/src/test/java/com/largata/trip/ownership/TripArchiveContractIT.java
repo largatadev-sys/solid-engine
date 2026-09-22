@@ -105,7 +105,7 @@ class TripArchiveContractIT extends PostgresTestBase {
 
 
     @Test
-    void archivingAnArchivedTripIsAConflictAndUnarchivingALiveOneIs() {
+    void unarchivingALiveTripIsAConflictAndArchivingAnArchivedOneIsNotAnAct() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
@@ -119,10 +119,10 @@ class TripArchiveContractIT extends PostgresTestBase {
         archive(owner, tripId).expectStatus().isOk();
         archive(owner, tripId)
                 .expectStatus()
-                .isEqualTo(409)
+                .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("ILLEGAL_STATE_TRANSITION");
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
     @Test

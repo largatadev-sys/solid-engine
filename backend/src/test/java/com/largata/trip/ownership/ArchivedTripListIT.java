@@ -178,7 +178,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(eventsNamed("itinerary_unarchived")).isEmpty();
 
         archive(owner, tripId).expectStatus().isOk();
-        archive(owner, tripId).expectStatus().isEqualTo(409);
+        archive(owner, tripId).expectStatus().isNotFound();
         assertThat(eventsNamed("itinerary_archived")).as("only the act that happened counts").hasSize(1);
     }
 

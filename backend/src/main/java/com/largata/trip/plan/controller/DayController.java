@@ -1,12 +1,12 @@
 package com.largata.trip.plan.controller;
 
-import com.largata.trip.room.AuthorizationGuard;
+import static com.largata.trip.room.Door.Rule.EDITABLE;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
 import com.largata.trip.exception.NotTheTripOwnerException;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.plan.dto.DayRequest;
 import com.largata.trip.plan.dto.DayResponse;
 import jakarta.validation.Valid;
@@ -28,44 +28,34 @@ import com.largata.trip.plan.service.DayService;
 class DayController {
 
     private final DayService days;
-    private final AuthorizationGuard guard;
-    private final TripFence fence;
 
-    DayController(DayService days, AuthorizationGuard guard, TripFence fence) {
+    DayController(DayService days) {
         this.days = days;
-        this.guard = guard;
-        this.fence = fence;
     }
 
     @PostMapping
+    @Door(EDITABLE)
     @ResponseStatus(HttpStatus.CREATED)
-    DayResponse append(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @Valid @RequestBody DayRequest request) {
-        return DayResponse.of(days.appendDay(theOwnerEditing(traveler, itineraryId), request.title()));
+    DayResponse append(@CurrentMember Membership member, @Valid @RequestBody DayRequest request) {
+        return DayResponse.of(days.appendDay(theOwner(member), request.title()));
     }
 
     @PatchMapping("/{dayId}")
+    @Door(EDITABLE)
     DayResponse rename(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID dayId,
-            @Valid @RequestBody DayRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return DayResponse.of(days.renameDay(fence.editable(member), dayId, request.title()));
+            @CurrentMember Membership member, @PathVariable UUID dayId, @Valid @RequestBody DayRequest request) {
+        return DayResponse.of(days.renameDay(member, dayId, request.title()));
     }
 
     @DeleteMapping("/{dayId}")
+    @Door(EDITABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(
-            @CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId, @PathVariable UUID dayId) {
-        days.deleteDay(theOwnerEditing(traveler, itineraryId), dayId);
+    void delete(@CurrentMember Membership member, @PathVariable UUID dayId) {
+        days.deleteDay(theOwner(member), dayId);
     }
 
 
-    private TripFence.Editable<Owner> theOwnerEditing(Traveler traveler, UUID itineraryId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return fence.editable(fence.owner(member, NotTheTripOwnerException::toAddOrRemoveDays));
+    private static Owner theOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toAddOrRemoveDays);
     }
 }

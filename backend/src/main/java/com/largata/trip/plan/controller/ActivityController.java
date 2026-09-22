@@ -1,10 +1,10 @@
 package com.largata.trip.plan.controller;
 
-import com.largata.trip.room.AuthorizationGuard;
+import static com.largata.trip.room.Door.Rule.EDITABLE;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.plan.dto.ActivityRequest;
 import com.largata.trip.plan.dto.ActivityResponse;
 import com.largata.trip.plan.dto.DayResponse;
@@ -35,103 +35,79 @@ class ActivityController {
 
     private final ActivityService activities;
     private final ActivityPhotoService activityPhotos;
-    private final AuthorizationGuard guard;
-    private final TripFence fence;
 
-    ActivityController(
-            ActivityService activities,
-            ActivityPhotoService activityPhotos,
-            AuthorizationGuard guard,
-            TripFence fence) {
+    ActivityController(ActivityService activities, ActivityPhotoService activityPhotos) {
         this.activities = activities;
         this.activityPhotos = activityPhotos;
-        this.guard = guard;
-        this.fence = fence;
     }
 
     @PostMapping
+    @Door(EDITABLE)
     @ResponseStatus(HttpStatus.CREATED)
     ActivityResponse create(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID dayId,
-            @Valid @RequestBody ActivityRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ActivityResponse.of(activities.create(fence.editable(member), dayId, request.toFields()));
+            @CurrentMember Membership member, @PathVariable UUID dayId, @Valid @RequestBody ActivityRequest request) {
+        return ActivityResponse.of(activities.create(member, dayId, request.toFields()));
     }
 
     @PatchMapping("/{activityId}")
+    @Door(EDITABLE)
     ActivityResponse edit(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
+            @CurrentMember Membership member,
             @PathVariable UUID dayId,
             @PathVariable UUID activityId,
             @Valid @RequestBody ActivityRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ActivityResponse.of(activities.edit(fence.editable(member), dayId, activityId, request.toFields()));
+        return ActivityResponse.of(activities.edit(member, dayId, activityId, request.toFields()));
     }
 
     @DeleteMapping("/{activityId}")
+    @Door(EDITABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID dayId,
-            @PathVariable UUID activityId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        activities.delete(fence.editable(member), dayId, activityId);
+    void delete(@CurrentMember Membership member, @PathVariable UUID dayId, @PathVariable UUID activityId) {
+        activities.delete(member, dayId, activityId);
     }
 
 
     @PostMapping("/{activityId}/photos")
+    @Door(EDITABLE)
     @ResponseStatus(HttpStatus.CREATED)
     ActivityResponse addPhoto(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
+            @CurrentMember Membership member,
             @PathVariable UUID dayId,
             @PathVariable UUID activityId,
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        activityPhotos.add(fence.editable(member), activityId, photo.getBytes());
+        activityPhotos.add(member, activityId, photo.getBytes());
         return ActivityResponse.of(activities.view(member, dayId, activityId));
     }
 
 
     @DeleteMapping("/{activityId}/photos/{photoId}")
+    @Door(EDITABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void removePhoto(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID dayId,
-            @PathVariable UUID activityId,
-            @PathVariable UUID photoId) {
-        activityPhotos.remove(
-                fence.editable(guard.requireMember(traveler.id(), itineraryId)), activityId, photoId);
+            @CurrentMember Membership member, @PathVariable UUID activityId, @PathVariable UUID photoId) {
+        activityPhotos.remove(member, activityId, photoId);
     }
 
 
     @PutMapping("/order")
+    @Door(EDITABLE)
     DayResponse reorder(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
+            @CurrentMember Membership member,
             @PathVariable UUID dayId,
             @Valid @RequestBody ReorderActivitiesRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
         return DayResponse.of(
-                activities.reorder(
-                        fence.editable(member), dayId, request.expectedActivityIds(), request.activityIds()));
+                activities.reorder(member, dayId, request.expectedActivityIds(), request.activityIds()));
     }
 
 
     @PostMapping("/{activityId}/move")
+    @Door(EDITABLE)
     ActivityResponse move(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
+            @CurrentMember Membership member,
             @PathVariable UUID dayId,
             @PathVariable UUID activityId,
             @Valid @RequestBody MoveActivityRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ActivityResponse.of(activities.move(fence.editable(member), dayId, activityId, request.targetDayId()));
+        return ActivityResponse.of(activities.move(member, dayId, activityId, request.targetDayId()));
     }
 }

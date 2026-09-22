@@ -2,7 +2,6 @@ package com.largata.trip.dump;
 
 import com.largata.common.api.Page;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -20,35 +19,31 @@ public class PhotoDumpService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final PhotoService photos;
-    private final TripFence fence;
 
-    PhotoDumpService(PhotoService photos, TripFence fence) {
+    PhotoDumpService(PhotoService photos) {
         this.photos = photos;
-        this.fence = fence;
     }
 
 
     @Transactional
-    public Photo add(TripFence.Writable<?> writable, byte[] uploaded) {
-        Membership member = writable.member();
+    public Photo add(Membership member, byte[] uploaded) {
         return photos.add(
                 PhotoSubject.ITINERARY_PHOTO_DUMP, member.itineraryId(), uploaded, member.travelerId());
     }
 
 
     @Transactional(readOnly = true)
-    public Page<Photo> list(TripFence.InAudience<?> audience, String cursor, Integer requestedLimit) {
+    public Page<Photo> list(Membership member, String cursor, Integer requestedLimit) {
         return photos.pageOf(
                 PhotoSubject.ITINERARY_PHOTO_DUMP,
-                audience.member().itineraryId(),
+                member.itineraryId(),
                 cursor,
                 clamp(requestedLimit));
     }
 
 
     @Transactional
-    public void remove(TripFence.Writable<?> writable, UUID photoId) {
-        Membership member = writable.member();
+    public void remove(Membership member, UUID photoId) {
         Photo photo = photoOfThisPool(member, photoId);
         if (!member.isOwner() && !photo.uploadedBy().equals(member.travelerId())) {
             throw new NotThePhotosUploaderException();

@@ -2,6 +2,7 @@ package com.largata.itinerary.controller;
 
 import com.largata.trip.room.AuthorizationGuard;
 import com.largata.trip.room.Membership;
+import com.largata.trip.room.PublicFace;
 import com.largata.trip.room.Owner;
 import java.util.function.Supplier;
 import com.largata.trip.room.TripFence;
@@ -89,6 +90,7 @@ class ItineraryController {
 
 
     @GetMapping("/v1/trips/{tripId}/itinerary")
+    @PublicFace
     ItineraryPageResponse readByTrip(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
         return pages.pageOf(itineraries.liveOfTripFor(traveler.id(), tripId), traveler.id());
     }

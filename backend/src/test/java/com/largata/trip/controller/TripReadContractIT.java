@@ -160,6 +160,29 @@ class TripReadContractIT extends PostgresTestBase {
     }
 
 
+    @Test
+    void deletingADeletedTripIsNotAnAct_theMaskAnswersItsOwner() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        rest.post()
+                .uri("/v1/trips/" + trip + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+    }
+
+
     private static final String[] ROOTS = {"/v1/trips/", "/v1/trips/"};
 
     private static String handle() {

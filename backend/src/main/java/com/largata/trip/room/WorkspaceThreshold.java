@@ -39,7 +39,7 @@ public final class WorkspaceThreshold implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        if (!(handler instanceof HandlerMethod method)) {
+        if (!(handler instanceof HandlerMethod method) || method.hasMethodAnnotation(PublicFace.class)) {
             return true;
         }
         Optional<UUID> named = tripIdIn(pathOf(request));

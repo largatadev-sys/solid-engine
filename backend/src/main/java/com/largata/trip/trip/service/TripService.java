@@ -7,7 +7,6 @@ import com.largata.common.api.Page;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.PublicationState;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -205,9 +204,9 @@ public class TripService {
 
 
     @Transactional
-    public Trip editFields(TripFence.Editable<Owner> editable, UnaryOperator<TripFields> merge) {
-        Membership member = editable.member();
-        editLease.requireHeldBy(editable, LeaseSubject.header(member.itineraryId()));
+    public Trip editFields(Owner owner, UnaryOperator<TripFields> merge) {
+        Membership member = owner.membership();
+        editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
         Trip itinerary = loadForDetailsEdit(member);
 
         TripFields fields = merge.apply(fieldsOf(itinerary));
@@ -271,8 +270,8 @@ public class TripService {
 
 
     @Transactional
-    public Trip start(TripFence.Editable<Owner> editable) {
-        Membership owner = editable.member();
+    public Trip start(Owner theOwner) {
+        Membership owner = theOwner.membership();
         Trip itinerary = load(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.start(Instant.now());
@@ -281,8 +280,8 @@ public class TripService {
 
 
     @Transactional
-    public Trip complete(TripFence.Editable<Owner> editable) {
-        Membership owner = editable.member();
+    public Trip complete(Owner theOwner) {
+        Membership owner = theOwner.membership();
         Trip itinerary = load(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.complete(Instant.now());
@@ -291,8 +290,8 @@ public class TripService {
 
 
     @Transactional
-    public Trip reopen(TripFence.Writable<Owner> writable) {
-        Membership owner = writable.member();
+    public Trip reopen(Owner theOwner) {
+        Membership owner = theOwner.membership();
         Trip itinerary = load(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         if (publication.isPublished(itinerary.id())) {

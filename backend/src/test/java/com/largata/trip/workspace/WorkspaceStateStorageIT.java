@@ -2,10 +2,9 @@ package com.largata.trip.workspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.support.Proofs;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.room.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
@@ -23,7 +22,6 @@ import com.largata.trip.workspace.entity.WorkspaceState;
 class WorkspaceStateStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
-    @Autowired private TripFence fence;
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
 
@@ -43,8 +41,8 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
         Trip trip = createTrip();
         UUID owner = trip.ownerId();
 
-        itineraries.start(editableOwner(ownerOf(trip, owner)));
-        itineraries.complete(editableOwner(ownerOf(trip, owner)));
+        itineraries.start(asOwner(ownerOf(trip, owner)));
+        itineraries.complete(asOwner(ownerOf(trip, owner)));
 
         assertThat(storedState(trip.id()))
                 .as("TW-2: COMPLETED was a stored copy of the ITINERARY's lifecycle, written as a"
@@ -93,11 +91,7 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
                 "SELECT state FROM workspace WHERE itinerary_id = ?", String.class, itineraryId);
     }
 
-    private Proofs proofs() {
-        return new Proofs(fence);
-    }
-
-    private TripFence.Editable<Owner> editableOwner(Membership member) {
-        return proofs().editableOwner(member);
+    private static Owner asOwner(Membership member) {
+        return Owner.of(member, NotTheTripOwnerException::toStartOrCompleteTheTrip);
     }
 }

@@ -4,9 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.largata.support.Proofs;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.trip.room.Role;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
@@ -41,7 +39,6 @@ class EditLeaseExpiryIT extends PostgresTestBase {
     private static final Duration TTL = Duration.ofMinutes(3);
 
     @Autowired private EditLeaseService leases;
-    @Autowired private TripFence fence;
     @Autowired private MutableClock clock;
     @Autowired private TripService itineraries;
     @Autowired private ActivityService activities;
@@ -53,12 +50,12 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership bob = otherMemberOf(alice);
         LeaseSubject header = LeaseSubject.header(alice.itineraryId());
 
-        leases.acquire(editable(alice), header);
-        assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.acquire(editable(bob), header));
+        leases.acquire(alice, header);
+        assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.acquire(bob, header));
 
         clock.advance(TTL.plusSeconds(1));
 
-        assertThatCode(() -> leases.acquire(editable(bob), header)).doesNotThrowAnyException();
+        assertThatCode(() -> leases.acquire(bob, header)).doesNotThrowAnyException();
     }
 
     @Test
@@ -67,14 +64,14 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership bob = otherMemberOf(alice);
         LeaseSubject header = LeaseSubject.header(alice.itineraryId());
 
-        leases.acquire(editable(alice), header);
+        leases.acquire(alice, header);
 
         clock.advance(TTL.minusSeconds(10));
-        leases.renew(editable(alice), header);
+        leases.renew(alice, header);
         clock.advance(TTL.minusSeconds(10));
-        leases.renew(editable(alice), header);
+        leases.renew(alice, header);
 
-        assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.acquire(editable(bob), header));
+        assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.acquire(bob, header));
     }
 
     @Test
@@ -82,12 +79,12 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership alice = ownerOfAFreshTrip();
         LeaseSubject header = LeaseSubject.header(alice.itineraryId());
 
-        leases.acquire(editable(alice), header);
-        assertThatCode(() -> leases.requireHeldBy(editable(alice), header)).doesNotThrowAnyException();
+        leases.acquire(alice, header);
+        assertThatCode(() -> leases.requireHeldBy(alice, header)).doesNotThrowAnyException();
 
         clock.advance(TTL.plusSeconds(1));
         assertThatExceptionOfType(EditLockedException.class)
-                .isThrownBy(() -> leases.requireHeldBy(editable(alice), header));
+                .isThrownBy(() -> leases.requireHeldBy(alice, header));
     }
 
     @Test
@@ -96,11 +93,11 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership bob = otherMemberOf(alice);
         LeaseSubject header = LeaseSubject.header(alice.itineraryId());
 
-        leases.acquire(editable(alice), header);
+        leases.acquire(alice, header);
         clock.advance(TTL.plusSeconds(1));
-        leases.acquire(editable(bob), header);
+        leases.acquire(bob, header);
 
-        assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.renew(editable(alice), header));
+        assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.renew(alice, header));
     }
 
     @Test
@@ -108,16 +105,16 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership alice = ownerOfAPlannedTrip();
         Membership bob = otherMemberOf(alice);
         UUID dayId = firstDayId(alice.itineraryId());
-        ActivityView hers = activities.create(editable(alice), dayId, named("Sunset cruise"));
-        ActivityView his = activities.create(editable(alice), dayId, named("Dive shop"));
+        ActivityView hers = activities.create(alice, dayId, named("Sunset cruise"));
+        ActivityView his = activities.create(alice, dayId, named("Dive shop"));
 
-        leases.acquire(editable(alice), LeaseSubject.activity(hers.id()));
+        leases.acquire(alice, LeaseSubject.activity(hers.id()));
 
-        assertThatCode(() -> leases.acquire(editable(bob), LeaseSubject.activity(his.id())))
+        assertThatCode(() -> leases.acquire(bob, LeaseSubject.activity(his.id())))
                 .as("the whole point of the subject-typed lease: two editors, one day")
                 .doesNotThrowAnyException();
         assertThatExceptionOfType(EditLockedException.class)
-                .isThrownBy(() -> leases.acquire(editable(bob), LeaseSubject.activity(hers.id())));
+                .isThrownBy(() -> leases.acquire(bob, LeaseSubject.activity(hers.id())));
     }
 
     @Test
@@ -125,11 +122,11 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership alice = ownerOfAPlannedTrip();
         Membership bob = otherMemberOf(alice);
         UUID dayId = firstDayId(alice.itineraryId());
-        ActivityView inside = activities.create(editable(alice), dayId, named("Inside the day"));
+        ActivityView inside = activities.create(alice, dayId, named("Inside the day"));
 
-        leases.acquire(editable(alice), LeaseSubject.day(dayId));
+        leases.acquire(alice, LeaseSubject.day(dayId));
 
-        assertThatCode(() -> leases.acquire(editable(bob), LeaseSubject.activity(inside.id())))
+        assertThatCode(() -> leases.acquire(bob, LeaseSubject.activity(inside.id())))
                 .as("ADR-014 amended: the day lease guards the day's own fields, never its contents")
                 .doesNotThrowAnyException();
     }
@@ -138,11 +135,11 @@ class EditLeaseExpiryIT extends PostgresTestBase {
     void everySubjectIsStoredUnderTheEnumsOwnUppercaseSpelling() {
         Membership alice = ownerOfAPlannedTrip();
         UUID dayId = firstDayId(alice.itineraryId());
-        ActivityView activity = activities.create(editable(alice), dayId, named("Anything"));
+        ActivityView activity = activities.create(alice, dayId, named("Anything"));
 
-        leases.acquire(editable(alice), LeaseSubject.header(alice.itineraryId()));
-        leases.acquire(editable(alice), LeaseSubject.day(dayId));
-        leases.acquire(editable(alice), LeaseSubject.activity(activity.id()));
+        leases.acquire(alice, LeaseSubject.header(alice.itineraryId()));
+        leases.acquire(alice, LeaseSubject.day(dayId));
+        leases.acquire(alice, LeaseSubject.activity(activity.id()));
 
         assertThat(
                         jdbc.queryForList(
@@ -186,13 +183,5 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         MutableClock editLockTestClock() {
             return new MutableClock(Instant.parse("2026-07-24T10:00:00Z"));
         }
-    }
-
-    private Proofs proofs() {
-        return new Proofs(fence);
-    }
-
-    private TripFence.Editable<Membership> editable(Membership member) {
-        return proofs().editable(member);
     }
 }

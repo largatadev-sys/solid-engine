@@ -4,7 +4,6 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.room.Membership;
 import com.largata.trip.room.Owner;
-import com.largata.trip.room.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -119,9 +118,9 @@ public class DayService {
 
 
     @Transactional
-    public DayView appendDay(TripFence.Editable<Owner> editable, String title) {
-        Membership member = editable.member();
-        editLease.requireNoForeignSession(editable);
+    public DayView appendDay(Owner owner, String title) {
+        Membership member = owner.membership();
+        editLease.requireNoForeignSession(member);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
         if (existing >= Trip.MAX_DAYS) {
@@ -138,10 +137,9 @@ public class DayService {
 
 
     @Transactional
-    public DayView renameDay(TripFence.Editable<?> editable, UUID dayId, String title) {
-        Membership member = editable.member();
+    public DayView renameDay(Membership member, UUID dayId, String title) {
         Day day = require(member.itineraryId(), dayId);
-        editLease.requireHeldBy(editable, LeaseSubject.day(dayId));
+        editLease.requireHeldBy(member, LeaseSubject.day(dayId));
         day.rename(title);
         days.save(day);
         history.record(member, HistoryAct.DAY_RENAMED, LeaseSubject.day(dayId));
@@ -152,11 +150,11 @@ public class DayService {
 
 
     @Transactional
-    public void deleteDay(TripFence.Editable<Owner> editable, UUID dayId) {
-        Membership member = editable.member();
+    public void deleteDay(Owner owner, UUID dayId) {
+        Membership member = owner.membership();
         UUID itineraryId = member.itineraryId();
         Day day = require(itineraryId, dayId);
-        editLease.requireHeldBy(editable, LeaseSubject.day(dayId));
+        editLease.requireHeldBy(member, LeaseSubject.day(dayId));
 
         List<UUID> containedIds =
                 activities.findByDayIdOrderBySortOrderAscIdAsc(dayId).stream().map(Activity::id).toList();
