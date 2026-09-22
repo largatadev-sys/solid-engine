@@ -21,6 +21,24 @@ public final class TripFence {
     }
 
 
+    public void requireOpenRoom(UUID tripId) {
+        if (tripId == null) {
+            throw new IllegalArgumentException("An act on a trip names the trip");
+        }
+        if (room.isArchived(tripId)) {
+            throw new ItineraryNotFoundException();
+        }
+    }
+
+
+    public void requireUnfrozen(UUID tripId, Supplier<? extends RuntimeException> refusal) {
+        if (tripId == null || refusal == null) {
+            throw new IllegalArgumentException("An act on a trip names the trip and its refusal");
+        }
+        requireNoLivePublication(tripId, refusal);
+    }
+
+
     public Owner owner(Membership member, Supplier<? extends RuntimeException> refusal) {
         requireOpenRoom(member);
         return Owner.of(member, refusal);

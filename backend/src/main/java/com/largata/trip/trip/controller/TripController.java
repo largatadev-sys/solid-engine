@@ -1,7 +1,11 @@
 package com.largata.trip.trip.controller;
 
+import static com.largata.trip.room.Door.Rule.OPEN;
+
 import com.largata.trip.room.AuthorizationGuard;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
+import com.largata.trip.room.ReachesClosedRoom;
 import com.largata.trip.room.Owner;
 import com.largata.trip.room.TripFence;
 import com.largata.trip.exception.NotTheTripOwnerException;
@@ -147,6 +151,8 @@ class TripController {
 
 
     @PostMapping("/{id}/unarchive")
+    @Door(OPEN)
+    @ReachesClosedRoom
     TripResponse unarchive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.unarchive(theOwnerChangingTheArchiveState(membership));
