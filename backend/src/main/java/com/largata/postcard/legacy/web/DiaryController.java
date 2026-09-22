@@ -57,14 +57,10 @@ class DiaryController {
             @RequestPart("entry") String entryJson,
             @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)
             throws IOException {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
+        Membership member = inTheOpenRoom(traveler, itineraryId);
         PostDiaryEntryRequest entry = json.readValue(entryJson, PostDiaryEntryRequest.class);
         return diary.post(
-                fence.writable(member),
-                entry.activityId(),
-                entry.caption(),
-                entry.fromDump(),
-                bytesOf(devicePhotos));
+                member, entry.activityId(), entry.caption(), entry.fromDump(), bytesOf(devicePhotos));
     }
 
 
@@ -74,8 +70,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.mine(fence.inAudience(member), cursor, limit);
+        return diary.mine(inTheOpenRoom(traveler, itineraryId), cursor, limit);
     }
 
 
@@ -84,8 +79,7 @@ class DiaryController {
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.mineById(fence.inAudience(member), entryId);
+        return diary.mineById(inTheOpenRoom(traveler, itineraryId), entryId);
     }
 
 
@@ -95,8 +89,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId,
             @RequestBody UpdateDiaryEntryRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.recaption(fence.writable(member), entryId, request.caption());
+        return diary.recaption(inTheOpenRoom(traveler, itineraryId), entryId, request.caption());
     }
 
 
@@ -108,8 +101,7 @@ class DiaryController {
             @PathVariable UUID entryId,
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.addDevicePhoto(fence.writable(member), entryId, photo.getBytes());
+        return diary.addDevicePhoto(inTheOpenRoom(traveler, itineraryId), entryId, photo.getBytes());
     }
 
 
@@ -120,8 +112,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId,
             @RequestBody AddDiaryPhotoFromDumpRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.addPhotoFromDump(fence.writable(member), entryId, request.photoId());
+        return diary.addPhotoFromDump(inTheOpenRoom(traveler, itineraryId), entryId, request.photoId());
     }
 
 
@@ -132,8 +123,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId,
             @PathVariable UUID photoId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        diary.removePhoto(fence.writable(member), entryId, photoId);
+        diary.removePhoto(inTheOpenRoom(traveler, itineraryId), entryId, photoId);
     }
 
 
@@ -143,8 +133,14 @@ class DiaryController {
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId) {
+        diary.delete(inTheOpenRoom(traveler, itineraryId), entryId);
+    }
+
+
+    private Membership inTheOpenRoom(Traveler traveler, UUID itineraryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        diary.delete(fence.writable(member), entryId);
+        fence.requireOpenRoom(itineraryId);
+        return member;
     }
 
 

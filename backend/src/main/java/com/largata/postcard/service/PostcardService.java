@@ -3,7 +3,6 @@ package com.largata.postcard.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.common.geo.Pin;
 import com.largata.common.tx.AfterCommit;
 import com.largata.diary.api.DiaryApi;
@@ -148,8 +147,7 @@ public class PostcardService {
 
     @Transactional
     public PostcardView postOnTripDay(
-            TripFence.Writable<?> writable, UUID tripDayId, String caption, List<byte[]> devicePhotos) {
-        Membership member = writable.member();
+            Membership member, UUID tripDayId, String caption, List<byte[]> devicePhotos) {
         TripFacts trip = tripOf(member);
         if (!trip.lifecycle().hasStarted()) {
             throw new TripNotStartedException();
@@ -203,8 +201,7 @@ public class PostcardService {
 
     @Transactional
     public PostcardView postFromActivity(
-            TripFence.Writable<?> writable, UUID activityId, String caption, List<byte[]> devicePhotos) {
-        Membership member = writable.member();
+            Membership member, UUID activityId, String caption, List<byte[]> devicePhotos) {
         TripFacts trip = tripOf(member);
         if (!trip.lifecycle().hasStarted()) {
             throw new TripNotStartedException();

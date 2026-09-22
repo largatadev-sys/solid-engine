@@ -1,14 +1,13 @@
 package com.largata.postcard.controller;
 
-import com.largata.trip.room.AuthorizationGuard;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
-import com.largata.identity.Traveler;
-import com.largata.common.security.CurrentTraveler;
 import com.largata.postcard.dto.PostOnDayRequest;
 import com.largata.postcard.dto.PostcardResponse;
 import com.largata.postcard.service.PostcardService;
-import com.largata.trip.exception.TripNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -27,43 +26,29 @@ import tools.jackson.databind.ObjectMapper;
 class TripDayPostcardController {
 
     private final PostcardService postcards;
-    private final AuthorizationGuard guard;
     private final ObjectMapper json;
-    private final TripFence fence;
 
-    TripDayPostcardController(
-            PostcardService postcards, AuthorizationGuard guard, ObjectMapper json, TripFence fence) {
+    TripDayPostcardController(PostcardService postcards, ObjectMapper json) {
         this.postcards = postcards;
-        this.guard = guard;
         this.json = json;
-        this.fence = fence;
     }
 
 
     @PostMapping
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.CREATED)
     PostcardResponse post(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID tripId,
+            @CurrentMember Membership member,
             @PathVariable UUID dayId,
             @RequestPart(name = "postcard", required = false) String postcardJson,
             @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)
             throws IOException {
-        Membership member = requireMember(traveler, tripId);
         PostOnDayRequest request =
                 postcardJson == null
                         ? new PostOnDayRequest(null, null, null)
                         : json.readValue(postcardJson, PostOnDayRequest.class);
         return PostcardResponse.of(
                 postcards.postOnTripDay(
-                        fence.writable(member),
-                        dayId,
-                        request.caption(),
-                        PostcardController.bytesOf(devicePhotos)));
-    }
-
-
-    private Membership requireMember(Traveler traveler, UUID tripId) {
-        return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
+                        member, dayId, request.caption(), PostcardController.bytesOf(devicePhotos)));
     }
 }
