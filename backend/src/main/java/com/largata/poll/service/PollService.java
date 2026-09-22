@@ -3,7 +3,6 @@ package com.largata.poll.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.room.Membership;
-import com.largata.trip.room.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -67,8 +66,7 @@ public class PollService {
 
     @Transactional
     public PollView ask(
-            TripFence.Writable<?> writable, String question, List<String> optionLabels, Instant closesAt) {
-        Membership member = writable.member();
+            Membership member, String question, List<String> optionLabels, Instant closesAt) {
         Instant now = Instant.now(clock);
         if (closesAt == null || !closesAt.isAfter(now)) {
             throw new DeadlineNotInFutureException();
@@ -86,8 +84,7 @@ public class PollService {
 
 
     @Transactional(readOnly = true)
-    public PollBoard board(TripFence.InAudience<?> audience) {
-        Membership member = audience.member();
+    public PollBoard board(Membership member) {
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         List<Poll> board = polls.boardOf(workspaceId);
@@ -117,8 +114,7 @@ public class PollService {
 
 
     @Transactional
-    public PollView vote(TripFence.Writable<?> writable, UUID pollId, UUID optionId) {
-        Membership member = writable.member();
+    public PollView vote(Membership member, UUID pollId, UUID optionId) {
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
@@ -136,8 +132,7 @@ public class PollService {
 
 
     @Transactional
-    public PollView close(TripFence.Writable<?> writable, UUID pollId) {
-        Membership member = writable.member();
+    public PollView close(Membership member, UUID pollId) {
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
@@ -154,8 +149,7 @@ public class PollService {
 
 
     @Transactional
-    public void delete(TripFence.Writable<?> writable, UUID pollId) {
-        Membership member = writable.member();
+    public void delete(Membership member, UUID pollId) {
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
         requireAuthorOrOwner(member, poll);

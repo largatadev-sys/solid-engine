@@ -1,10 +1,10 @@
 package com.largata.poll.controller;
 
-import com.largata.trip.room.TripFence;
-import com.largata.trip.room.AuthorizationGuard;
+import static com.largata.trip.room.Door.Rule.OPEN;
+
+import com.largata.trip.room.CurrentMember;
+import com.largata.trip.room.Door;
 import com.largata.trip.room.Membership;
-import com.largata.common.security.CurrentTraveler;
-import com.largata.identity.Traveler;
 import com.largata.poll.dto.CastVoteRequest;
 import com.largata.poll.dto.CreatePollRequest;
 import com.largata.poll.dto.PollBoardResponse;
@@ -28,67 +28,45 @@ import org.springframework.web.bind.annotation.RestController;
 class PollController {
 
     private final PollService polls;
-    private final AuthorizationGuard guard;
-    private final TripFence fence;
 
-    PollController(PollService polls, AuthorizationGuard guard, TripFence fence) {
+    PollController(PollService polls) {
         this.polls = polls;
-        this.guard = guard;
-        this.fence = fence;
     }
 
 
     @PostMapping
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.CREATED)
-    PollResponse ask(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @Valid @RequestBody CreatePollRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollResponse.of(
-                polls.ask(
-                        fence.writable(member),
-                        request.question(),
-                        request.options(),
-                        request.closesAt()));
+    PollResponse ask(@CurrentMember Membership member, @Valid @RequestBody CreatePollRequest request) {
+        return PollResponse.of(polls.ask(member, request.question(), request.options(), request.closesAt()));
     }
 
 
     @GetMapping
-    PollBoardResponse board(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollBoardResponse.of(polls.board(fence.inAudience(member)));
+    PollBoardResponse board(@CurrentMember Membership member) {
+        return PollBoardResponse.of(polls.board(member));
     }
 
 
     @PutMapping("/{pollId}/vote")
+    @Door(OPEN)
     PollResponse vote(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID pollId,
-            @Valid @RequestBody CastVoteRequest request) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollResponse.of(polls.vote(fence.writable(member), pollId, request.optionId()));
+            @CurrentMember Membership member, @PathVariable UUID pollId, @Valid @RequestBody CastVoteRequest request) {
+        return PollResponse.of(polls.vote(member, pollId, request.optionId()));
     }
 
 
     @PostMapping("/{pollId}/close")
-    PollResponse close(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID pollId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollResponse.of(polls.close(fence.writable(member), pollId));
+    @Door(OPEN)
+    PollResponse close(@CurrentMember Membership member, @PathVariable UUID pollId) {
+        return PollResponse.of(polls.close(member, pollId));
     }
 
 
     @DeleteMapping("/{pollId}")
+    @Door(OPEN)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @PathVariable UUID pollId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        polls.delete(fence.writable(member), pollId);
+    void delete(@CurrentMember Membership member, @PathVariable UUID pollId) {
+        polls.delete(member, pollId);
     }
 }
