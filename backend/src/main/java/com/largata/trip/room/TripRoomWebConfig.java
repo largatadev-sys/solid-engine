@@ -16,9 +16,7 @@ class TripRoomWebConfig implements WebMvcConfigurer {
     private final WorkspaceThreshold threshold;
 
     TripRoomWebConfig(CurrentTravelers travelers, AuthorizationGuard guard, TripFence fence) {
-        this.threshold =
-                new WorkspaceThreshold(
-                        travelers, guard, fence, UndeclaredWrites.ALLOWED_WHILE_THE_PROOFS_STILL_GUARD);
+        this.threshold = new WorkspaceThreshold(travelers, guard, fence);
     }
 
     @Override

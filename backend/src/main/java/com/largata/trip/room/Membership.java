@@ -3,7 +3,7 @@ package com.largata.trip.room;
 import java.util.UUID;
 
 
-public record Membership(UUID travelerId, UUID itineraryId, Role role) implements Standing {
+public record Membership(UUID travelerId, UUID itineraryId, Role role) {
 
     public Membership {
         if (travelerId == null || itineraryId == null || role == null) {
@@ -13,11 +13,5 @@ public record Membership(UUID travelerId, UUID itineraryId, Role role) implement
 
     public boolean isOwner() {
         return role == Role.OWNER;
-    }
-
-
-    @Override
-    public Membership membership() {
-        return this;
     }
 }

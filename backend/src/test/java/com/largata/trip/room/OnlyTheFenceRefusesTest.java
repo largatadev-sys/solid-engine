@@ -68,9 +68,9 @@ class OnlyTheFenceRefusesTest {
         assertThat(javaFiles().count())
                 .as("a scan that found no files would pass every rule above while guarding nothing")
                 .isGreaterThan(200);
-        assertThat(Files.readString(THE_FENCE))
-                .as("and the refusals it pins must still be thrown by the fence, or the rule forbids"
-                        + " constructing exceptions nobody constructs")
+        assertThat(Files.readString(MAIN.resolve("trip/room/WorkspaceThreshold.java")))
+                .as("and the refusals it pins must still be supplied to the fence by the threshold, or"
+                        + " the rule forbids constructing exceptions nobody constructs")
                 .contains("ItineraryPublishedException::new")
                 .contains("MembershipFrozenException::new");
     }

@@ -132,9 +132,6 @@ public class MembershipService {
     public void archive(Owner owner) {
         UUID itineraryId = owner.membership().itineraryId();
         UUID by = owner.membership().travelerId();
-        if (currentState(itineraryId).isArchived()) {
-            throw IllegalWorkspaceTransitionException.alreadyArchived();
-        }
 
         workspaces.archive(itineraryId);
         leases.releaseAnyHold(itineraryId);

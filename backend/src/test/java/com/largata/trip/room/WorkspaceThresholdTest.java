@@ -45,6 +45,9 @@ class WorkspaceThresholdTest {
         @Door(MEMBERSHIP_MUTABLE)
         void roster() {}
 
+        @Door(MEMBERSHIP_MUTABLE)
+        void rosterRead() {}
+
         @Door(OPEN)
         @ReachesClosedRoom
         void undo() {}
@@ -54,17 +57,6 @@ class WorkspaceThresholdTest {
 
         @PublicFace
         void publishedPageByTripId() {}
-    }
-
-
-    @Test
-    void theTripsPublicFaceIsNotTheRoomsAndAStrangerPassesUntouched() {
-        WorkspaceThreshold threshold = threshold(STRANGER, true, true, UndeclaredWrites.REFUSED);
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/trips/" + TRIP + "/itinerary");
-
-        assertThat(threshold.preHandle(request, new MockHttpServletResponse(), handler("publishedPageByTripId")))
-                .isTrue();
-        assertThat(request.getAttribute(WorkspaceThreshold.MEMBERSHIP_ATTRIBUTE)).isNull();
     }
 
 
@@ -85,38 +77,45 @@ class WorkspaceThresholdTest {
 
     @Test
     void aRouteOutsideTheScopeIsNotTouched() {
-        WorkspaceThreshold threshold = threshold(STRANGER, false, false, UndeclaredWrites.REFUSED);
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/trips");
 
-        assertThat(threshold.preHandle(request, new MockHttpServletResponse(), handler("undeclaredWrite"))).isTrue();
+        assertThat(threshold(STRANGER, false, false).preHandle(request, new MockHttpServletResponse(), handler("undeclaredWrite")))
+                .isTrue();
+        assertThat(request.getAttribute(WorkspaceThreshold.MEMBERSHIP_ATTRIBUTE)).isNull();
+    }
+
+
+    @Test
+    void theTripsPublicFaceIsNotTheRoomsAndAStrangerPassesUntouched() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/trips/" + TRIP + "/itinerary");
+
+        assertThat(threshold(STRANGER, true, true).preHandle(request, new MockHttpServletResponse(), handler("publishedPageByTripId")))
+                .isTrue();
         assertThat(request.getAttribute(WorkspaceThreshold.MEMBERSHIP_ATTRIBUTE)).isNull();
     }
 
 
     @Test
     void aStrangerHearsTheMaskBeforeAnythingElse() {
-        WorkspaceThreshold threshold = threshold(STRANGER, true, true, UndeclaredWrites.REFUSED);
-
-        assertThatThrownBy(() -> cross(threshold, "POST", "/days", "undeclaredWrite"))
+        assertThatThrownBy(() -> cross(threshold(STRANGER, true, true), "POST", "/days", "undeclaredWrite"))
                 .isInstanceOf(ItineraryNotFoundException.class);
     }
 
 
     @Test
     void aClosedRoomIsNotFoundForAMemberAndForItsOwnerAlike() {
-        assertThatThrownBy(() -> cross(threshold(MEMBER, true, false, UndeclaredWrites.REFUSED), "GET", "", "read"))
+        assertThatThrownBy(() -> cross(threshold(MEMBER, true, false), "GET", "", "read"))
                 .isInstanceOf(ItineraryNotFoundException.class);
-        assertThatThrownBy(() -> cross(threshold(OWNER, true, false, UndeclaredWrites.REFUSED), "GET", "", "read"))
+        assertThatThrownBy(() -> cross(threshold(OWNER, true, false), "GET", "", "read"))
                 .isInstanceOf(ItineraryNotFoundException.class);
     }
 
 
     @Test
     void onlyAHandlerThatReachesAClosedRoomGetsThroughIt() {
-        WorkspaceThreshold threshold = threshold(OWNER, true, false, UndeclaredWrites.REFUSED);
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/trips/" + TRIP + "/unarchive");
 
-        assertThat(threshold.preHandle(request, new MockHttpServletResponse(), handler("undo"))).isTrue();
+        assertThat(threshold(OWNER, true, false).preHandle(request, new MockHttpServletResponse(), handler("undo"))).isTrue();
         assertThat(request.getAttribute(WorkspaceThreshold.MEMBERSHIP_ATTRIBUTE))
                 .isEqualTo(new Membership(OWNER, TRIP, Role.OWNER));
     }
@@ -124,9 +123,7 @@ class WorkspaceThresholdTest {
 
     @Test
     void reachingAClosedRoomDoesNotExcuseAWriteFromDeclaringItsDoor() {
-        WorkspaceThreshold threshold = threshold(OWNER, true, false, UndeclaredWrites.REFUSED);
-
-        assertThatThrownBy(() -> cross(threshold, "POST", "/unarchive", "undoWithoutADoor"))
+        assertThatThrownBy(() -> cross(threshold(OWNER, true, false), "POST", "/unarchive", "undoWithoutADoor"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Handlers.undoWithoutADoor");
     }
@@ -134,69 +131,68 @@ class WorkspaceThresholdTest {
 
     @Test
     void aReadNeedsNoDoorAndArrivesWithTheMembership() {
-        WorkspaceThreshold threshold = threshold(MEMBER, false, true, UndeclaredWrites.REFUSED);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/trips/" + TRIP);
 
-        assertThat(threshold.preHandle(request, new MockHttpServletResponse(), handler("read"))).isTrue();
+        assertThat(threshold(MEMBER, false, true).preHandle(request, new MockHttpServletResponse(), handler("read"))).isTrue();
         assertThat(request.getAttribute(WorkspaceThreshold.MEMBERSHIP_ATTRIBUTE))
                 .isEqualTo(new Membership(MEMBER, TRIP, Role.MEMBER));
     }
 
 
     @Test
-    void anUndeclaredWriteIsACodingMistakeNamedByHandler() {
-        WorkspaceThreshold threshold = threshold(MEMBER, false, false, UndeclaredWrites.REFUSED);
+    void aReadMayDeclareADoorAndIsHeldToIt() {
+        assertThatThrownBy(() -> cross(threshold(MEMBER, false, true), "GET", "/join-link", "rosterRead"))
+                .isInstanceOf(MembershipFrozenException.class);
+        assertThatCode(() -> cross(threshold(MEMBER, false, false), "GET", "/join-link", "rosterRead"))
+                .doesNotThrowAnyException();
+    }
 
-        assertThatThrownBy(() -> cross(threshold, "POST", "/days", "undeclaredWrite"))
+
+    @Test
+    void anUndeclaredWriteIsACodingMistakeNamedByHandler() {
+        assertThatThrownBy(() -> cross(threshold(MEMBER, false, false), "POST", "/days", "undeclaredWrite"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Handlers.undeclaredWrite");
     }
 
 
     @Test
-    void whileTheProofsStillGuardAnUndeclaredWritePassesThrough() {
-        WorkspaceThreshold threshold =
-                threshold(MEMBER, false, false, UndeclaredWrites.ALLOWED_WHILE_THE_PROOFS_STILL_GUARD);
-
-        assertThatCode(() -> cross(threshold, "POST", "/days", "undeclaredWrite")).doesNotThrowAnyException();
-    }
-
-
-    @Test
     void theEditableDoorRefusesAPublishedTripWithTheFreeze() {
-        assertThatThrownBy(() -> cross(threshold(MEMBER, false, true, UndeclaredWrites.REFUSED), "PATCH", "/days/x", "editable"))
+        assertThatThrownBy(() -> cross(threshold(MEMBER, false, true), "PATCH", "/days/x", "editable"))
                 .isInstanceOf(ItineraryPublishedException.class);
-        assertThatCode(() -> cross(threshold(MEMBER, false, false, UndeclaredWrites.REFUSED), "PATCH", "/days/x", "editable"))
+        assertThatCode(() -> cross(threshold(MEMBER, false, false), "PATCH", "/days/x", "editable"))
                 .doesNotThrowAnyException();
     }
 
 
     @Test
     void theRosterDoorRefusesAPublishedTripWithItsOwnWords() {
-        assertThatThrownBy(() -> cross(threshold(OWNER, false, true, UndeclaredWrites.REFUSED), "POST", "/invitations", "roster"))
+        assertThatThrownBy(() -> cross(threshold(OWNER, false, true), "POST", "/invitations", "roster"))
                 .isInstanceOf(MembershipFrozenException.class);
     }
 
 
     @Test
     void theOpenDoorSurvivesPublication() {
-        assertThatCode(() -> cross(threshold(MEMBER, false, true, UndeclaredWrites.REFUSED), "POST", "/polls", "open"))
+        assertThatCode(() -> cross(threshold(MEMBER, false, true), "POST", "/polls", "open"))
                 .doesNotThrowAnyException();
     }
 
 
     @Test
     void theMaskOutranksTheFreeze() {
-        assertThatThrownBy(() -> cross(threshold(MEMBER, true, true, UndeclaredWrites.REFUSED), "PATCH", "/days/x", "editable"))
+        assertThatThrownBy(() -> cross(threshold(MEMBER, true, true), "PATCH", "/days/x", "editable"))
                 .isInstanceOf(ItineraryNotFoundException.class);
     }
 
 
     @Test
-    void theThresholdIsWhoIsAskingTheGuardTheFenceAndAPolicy() {
-        assertThatThrownBy(() -> new WorkspaceThreshold(null, guardKnowing(MEMBER), fence(false, false), UndeclaredWrites.REFUSED))
+    void theThresholdIsWhoIsAskingTheGuardAndTheFence() {
+        assertThatThrownBy(() -> new WorkspaceThreshold(null, guardKnowing(MEMBER), fence(false, false)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new WorkspaceThreshold(asking(MEMBER), guardKnowing(MEMBER), fence(false, false), null))
+        assertThatThrownBy(() -> new WorkspaceThreshold(asking(MEMBER), null, fence(false, false)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new WorkspaceThreshold(asking(MEMBER), guardKnowing(MEMBER), null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -209,9 +205,8 @@ class WorkspaceThresholdTest {
     }
 
 
-    private static WorkspaceThreshold threshold(
-            UUID asking, boolean archived, boolean published, UndeclaredWrites policy) {
-        return new WorkspaceThreshold(asking(asking), guardKnowing(MEMBER, OWNER), fence(archived, published), policy);
+    private static WorkspaceThreshold threshold(UUID asking, boolean archived, boolean published) {
+        return new WorkspaceThreshold(asking(asking), guardKnowing(MEMBER, OWNER), fence(archived, published));
     }
 
 

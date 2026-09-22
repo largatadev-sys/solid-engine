@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 
-public final class Owner implements Standing {
+public final class Owner {
 
     private final Membership membership;
 
@@ -24,7 +24,6 @@ public final class Owner implements Standing {
     }
 
 
-    @Override
     public Membership membership() {
         return membership;
     }

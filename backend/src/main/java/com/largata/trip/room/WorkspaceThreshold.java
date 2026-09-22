@@ -21,20 +21,14 @@ public final class WorkspaceThreshold implements HandlerInterceptor {
     private final CurrentTravelers travelers;
     private final AuthorizationGuard guard;
     private final TripFence fence;
-    private final UndeclaredWrites undeclaredWrites;
 
-    public WorkspaceThreshold(
-            CurrentTravelers travelers,
-            AuthorizationGuard guard,
-            TripFence fence,
-            UndeclaredWrites undeclaredWrites) {
-        if (travelers == null || guard == null || fence == null || undeclaredWrites == null) {
-            throw new IllegalArgumentException("The threshold is who is asking, the guard, the fence and a policy");
+    public WorkspaceThreshold(CurrentTravelers travelers, AuthorizationGuard guard, TripFence fence) {
+        if (travelers == null || guard == null || fence == null) {
+            throw new IllegalArgumentException("The threshold is who is asking, the guard and the fence");
         }
         this.travelers = travelers;
         this.guard = guard;
         this.fence = fence;
-        this.undeclaredWrites = undeclaredWrites;
     }
 
     @Override
@@ -75,7 +69,7 @@ public final class WorkspaceThreshold implements HandlerInterceptor {
     private void demandTheDoor(HandlerMethod method, String httpMethod, UUID tripId) {
         Door door = method.getMethodAnnotation(Door.class);
         if (door == null) {
-            if (!READS.contains(httpMethod) && undeclaredWrites == UndeclaredWrites.REFUSED) {
+            if (!READS.contains(httpMethod)) {
                 throw new IllegalStateException(
                         "A write under the threshold declares its door, and this one does not: "
                                 + method.getBeanType().getSimpleName()
