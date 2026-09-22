@@ -12,7 +12,6 @@ import com.largata.itinerary.exception.ItineraryObjectNotFoundException;
 import com.largata.itinerary.exception.TripBeingEditedException;
 import com.largata.itinerary.exception.TripNotCompleteException;
 import com.largata.itinerary.repository.ItineraryObjectRepository;
-import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.api.TripPlan;
 import com.largata.trip.room.MembershipApi;

@@ -16,7 +16,6 @@ import com.largata.join.exception.JoinExceptions.EmailNotVerifiedException;
 import com.largata.join.exception.JoinExceptions.JoinRequestNotFoundException;
 import com.largata.join.exception.JoinExceptions.JoinRequestNotPendingException;
 import com.largata.join.exception.JoinExceptions.LinkClosedException;
-import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.join.exception.JoinExceptions.UnknownJoinTokenException;
 import com.largata.join.join.adapter.JoinQueueTopic;
 import com.largata.join.join.entity.JoinLink;

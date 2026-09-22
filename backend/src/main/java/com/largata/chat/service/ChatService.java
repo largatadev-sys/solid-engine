@@ -2,7 +2,6 @@ package com.largata.chat.service;
 
 import com.largata.chat.adapter.ChatTopic;
 import com.largata.chat.entity.ChatMessage;
-import com.largata.chat.exception.ChatExceptions;
 import com.largata.chat.repository.ChatMessageRepository;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;

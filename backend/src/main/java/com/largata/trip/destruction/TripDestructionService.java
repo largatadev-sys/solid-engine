@@ -8,7 +8,6 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.trip.api.TripApi;
-import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.ownership.service.OwnershipRows;
 import com.largata.trip.plan.service.PlanRows;

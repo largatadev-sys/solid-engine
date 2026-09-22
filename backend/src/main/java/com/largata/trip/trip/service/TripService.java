@@ -46,7 +46,6 @@ import com.largata.trip.trip.repository.TripRepository;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.entity.TripFields;
 import com.largata.trip.trip.entity.TripCategory;
-import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.trip.exception.IllegalStateTransitionException;
 
 
