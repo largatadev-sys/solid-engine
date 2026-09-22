@@ -269,36 +269,36 @@ public class TripService {
 
 
     @Transactional
-    public Trip start(Owner theOwner) {
-        Membership owner = theOwner.membership();
-        Trip itinerary = load(owner);
-        editLease.requireSessionFreeForLifecycle(owner);
+    public Trip start(Owner owner) {
+        Membership member = owner.membership();
+        Trip itinerary = load(member);
+        editLease.requireSessionFreeForLifecycle(member);
         itinerary.start(Instant.now());
-        return record(itinerary, owner, "itinerary_started");
+        return record(itinerary, member, "itinerary_started");
     }
 
 
     @Transactional
-    public Trip complete(Owner theOwner) {
-        Membership owner = theOwner.membership();
-        Trip itinerary = load(owner);
-        editLease.requireSessionFreeForLifecycle(owner);
+    public Trip complete(Owner owner) {
+        Membership member = owner.membership();
+        Trip itinerary = load(member);
+        editLease.requireSessionFreeForLifecycle(member);
         itinerary.complete(Instant.now());
-        return record(itinerary, owner, "itinerary_completed");
+        return record(itinerary, member, "itinerary_completed");
     }
 
 
     @Transactional
-    public Trip reopen(Owner theOwner) {
-        Membership owner = theOwner.membership();
-        Trip itinerary = load(owner);
-        editLease.requireSessionFreeForLifecycle(owner);
+    public Trip reopen(Owner owner) {
+        Membership member = owner.membership();
+        Trip itinerary = load(member);
+        editLease.requireSessionFreeForLifecycle(member);
         if (publication.isPublished(itinerary.id())) {
             throw new IllegalStateTransitionException(
                     itinerary.state(), itinerary.state().previous().orElse(itinerary.state()));
         }
         itinerary.reopen();
-        return record(itinerary, owner, "itinerary_reopened");
+        return record(itinerary, member, "itinerary_reopened");
     }
 
 

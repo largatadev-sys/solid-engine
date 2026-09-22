@@ -13,9 +13,9 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 
-public final class WorkspaceThreshold implements HandlerInterceptor {
+final class WorkspaceThreshold implements HandlerInterceptor {
 
-    public static final String MEMBERSHIP_ATTRIBUTE = WorkspaceThreshold.class.getName() + ".membership";
+    static final String MEMBERSHIP_ATTRIBUTE = WorkspaceThreshold.class.getName() + ".membership";
 
     private static final Set<String> READS = Set.of("GET", "HEAD", "OPTIONS");
 
@@ -23,7 +23,7 @@ public final class WorkspaceThreshold implements HandlerInterceptor {
     private final AuthorizationGuard guard;
     private final TripFence fence;
 
-    public WorkspaceThreshold(CurrentTravelers travelers, AuthorizationGuard guard, TripFence fence) {
+    WorkspaceThreshold(CurrentTravelers travelers, AuthorizationGuard guard, TripFence fence) {
         if (travelers == null || guard == null || fence == null) {
             throw new IllegalArgumentException("The threshold is who is asking, the guard and the fence");
         }

@@ -4,9 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.RoutesUnderTheThreshold;
 import com.largata.support.RoutesUnderTheThreshold.Handler;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
+import com.largata.support.Sources;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -26,7 +24,7 @@ class OnlyTheThresholdResolvesMembershipUnderItsScopeTest {
 
         List<String> offenders =
                 controllers.stream()
-                        .filter(source -> THE_ROOMS_OWN_WORK.stream().anyMatch(read(source)::contains))
+                        .filter(source -> THE_ROOMS_OWN_WORK.stream().anyMatch(Sources.read(source)::contains))
                         .map(Path::toString)
                         .sorted()
                         .toList();
@@ -41,14 +39,5 @@ class OnlyTheThresholdResolvesMembershipUnderItsScopeTest {
         assertThat(controllers)
                 .as("the scan must see the controllers it guards")
                 .hasSizeGreaterThanOrEqualTo(12);
-    }
-
-
-    private static String read(Path source) {
-        try {
-            return Files.readString(source);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

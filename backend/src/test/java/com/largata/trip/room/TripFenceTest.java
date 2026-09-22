@@ -1,12 +1,13 @@
 package com.largata.trip.room;
 
+import static com.largata.support.Fences.fence;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.largata.support.Fences;
 import com.largata.trip.exception.ItineraryNotFoundException;
 import com.largata.trip.exception.ItineraryPublishedException;
 import com.largata.trip.exception.MembershipFrozenException;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -82,42 +83,10 @@ class TripFenceTest {
 
     @Test
     void aFenceNeedsBothItsFacts() {
-        assertThatThrownBy(() -> new TripFence(null, openStateForTest()))
+        assertThatThrownBy(() -> new TripFence(null, Fences.publication(false)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new TripFence(tripId -> false, null))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-
-    private static TripFence fence(boolean archived, boolean published) {
-        return new TripFence(
-                tripId -> archived,
-                new PublicationState() {
-                    @Override
-                    public boolean isPublished(UUID tripId) {
-                        return published;
-                    }
-
-                    @Override
-                    public Optional<LivePublication> liveFor(UUID tripId) {
-                        return Optional.empty();
-                    }
-                });
-    }
-
-
-    private static PublicationState openStateForTest() {
-        return new PublicationState() {
-            @Override
-            public boolean isPublished(UUID tripId) {
-                return false;
-            }
-
-            @Override
-            public Optional<LivePublication> liveFor(UUID tripId) {
-                return Optional.empty();
-            }
-        };
     }
 
 

@@ -91,9 +91,9 @@ public class ItineraryObjectService implements ItineraryApi {
 
 
     @Transactional(readOnly = true)
-    public String snapshotOfLivePlan(Owner theOwner) {
-        Membership owner = theOwner.membership();
-        TripPlan plan = plans.planOf(owner.itineraryId()).orElseThrow(TripNotFoundException::new);
+    public String snapshotOfLivePlan(Owner owner) {
+        Membership member = owner.membership();
+        TripPlan plan = plans.planOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
         return json.writeValueAsString(PlanSnapshot.of(plan));
     }
 

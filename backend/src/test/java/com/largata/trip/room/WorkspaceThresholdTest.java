@@ -2,6 +2,7 @@ package com.largata.trip.room;
 
 import static com.largata.trip.room.Door.Rule.EDITABLE;
 import static com.largata.trip.room.Door.Rule.MEMBERSHIP_MUTABLE;
+import static com.largata.support.Fences.fence;
 import static com.largata.trip.room.Door.Rule.OPEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -17,6 +18,7 @@ import com.largata.trip.exception.MalformedTripIdException;
 import com.largata.trip.exception.MembershipFrozenException;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -235,29 +237,7 @@ class WorkspaceThresholdTest {
 
 
     private static boolean contains(UUID[] travelers, UUID who) {
-        for (UUID t : travelers) {
-            if (t.equals(who)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    private static TripFence fence(boolean archived, boolean published) {
-        return new TripFence(
-                tripId -> archived,
-                new PublicationState() {
-                    @Override
-                    public boolean isPublished(UUID tripId) {
-                        return published;
-                    }
-
-                    @Override
-                    public Optional<LivePublication> liveFor(UUID tripId) {
-                        return Optional.empty();
-                    }
-                });
+        return Set.of(travelers).contains(who);
     }
 
 

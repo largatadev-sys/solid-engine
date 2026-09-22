@@ -235,11 +235,11 @@ public class JoinService {
 
 
     @Transactional(readOnly = true)
-    public List<PendingJoinRequest> queueFor(Owner theOwner) {
-        Membership owner = theOwner.membership();
+    public List<PendingJoinRequest> queueFor(Owner owner) {
+        Membership member = owner.membership();
         List<JoinRequest> rows =
                 requests.findByWorkspaceIdAndStatusOrderByCreatedAtAsc(
-                        workspaceIdOf(owner.itineraryId()), JoinRequestStatus.PENDING);
+                        workspaceIdOf(member.itineraryId()), JoinRequestStatus.PENDING);
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -340,14 +340,14 @@ public class JoinService {
 
 
     @Transactional
-    public void approve(Owner theOwner, UUID requestId) {
-        Membership owner = theOwner.membership();
-        JoinRequest asked = answerable(owner, requestId);
-        UUID itineraryId = owner.itineraryId();
+    public void approve(Owner owner, UUID requestId) {
+        Membership member = owner.membership();
+        JoinRequest asked = answerable(member, requestId);
+        UUID itineraryId = member.itineraryId();
         Instant now = Instant.now(clock);
 
         workspaces.admit(itineraryId, asked.travelerId(), now);
-        asked.approve(owner.travelerId(), now);
+        asked.approve(member.travelerId(), now);
         requests.saveAndFlush(asked);
         invitations.supersedePendingInvitationsFor(asked.workspaceId(), asked.travelerId());
 
@@ -356,27 +356,27 @@ public class JoinService {
                 requestId,
                 itineraryId,
                 asked.travelerId(),
-                owner.travelerId());
+                member.travelerId());
         joinQueue.broadcastQueueChanged(itineraryId);
-        emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), owner.travelerId());
+        emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), member.travelerId());
     }
 
 
     @Transactional
-    public void decline(Owner theOwner, UUID requestId) {
-        Membership owner = theOwner.membership();
-        JoinRequest asked = answerable(owner, requestId);
-        asked.decline(owner.travelerId(), Instant.now(clock));
+    public void decline(Owner owner, UUID requestId) {
+        Membership member = owner.membership();
+        JoinRequest asked = answerable(member, requestId);
+        asked.decline(member.travelerId(), Instant.now(clock));
         requests.saveAndFlush(asked);
 
         log.info(
                 "Join request declined: requestId={} itineraryId={} by={}",
                 requestId,
-                owner.itineraryId(),
-                owner.travelerId());
-        joinQueue.broadcastQueueChanged(owner.itineraryId());
+                member.itineraryId(),
+                member.travelerId());
+        joinQueue.broadcastQueueChanged(member.itineraryId());
         emitDecision(
-                "join_request_declined", requestId, owner.itineraryId(), asked.travelerId(), owner.travelerId());
+                "join_request_declined", requestId, member.itineraryId(), asked.travelerId(), member.travelerId());
     }
 
 

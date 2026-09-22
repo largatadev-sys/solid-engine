@@ -46,7 +46,8 @@ public final class RoutesUnderTheThreshold {
                     continue;
                 }
                 String[] paths = mapping.path().length > 0 ? mapping.path() : new String[] {""};
-                RequestMethod[] methods = mapping.method().length > 0 ? mapping.method() : new RequestMethod[] {RequestMethod.GET};
+                RequestMethod[] methods =
+                        mapping.method().length > 0 ? mapping.method() : new RequestMethod[] {RequestMethod.POST};
                 for (String path : paths) {
                     for (RequestMethod httpMethod : methods) {
                         handlers.add(new Handler(controller, method, prefix + path, httpMethod));

@@ -2,8 +2,8 @@ package com.largata.trip.room;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.support.Sources;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -30,7 +30,7 @@ class TheFenceOutliersAreNamedTest {
             callers =
                     files.filter(file -> file.toString().endsWith(".java"))
                             .filter(file -> !file.startsWith(MAIN.resolve("trip").resolve("room")))
-                            .filter(file -> read(file).contains("fence.require"))
+                            .filter(file -> Sources.read(file).contains("fence.require"))
                             .map(file -> MAIN.relativize(file).toString().replace('\\', '/'))
                             .sorted()
                             .toList();
@@ -44,14 +44,5 @@ class TheFenceOutliersAreNamedTest {
                                 + " act is named here so a new one is a deliberate line in this list rather"
                                 + " than a silent one in a service")
                 .containsExactlyInAnyOrderElementsOf(THE_OUTLIERS);
-    }
-
-
-    private static String read(Path file) {
-        try {
-            return Files.readString(file);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

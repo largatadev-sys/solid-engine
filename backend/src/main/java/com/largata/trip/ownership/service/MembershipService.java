@@ -196,10 +196,10 @@ public class MembershipService {
 
 
     @Transactional
-    public void offerOwnership(Owner theOwner, UUID targetTravelerId) {
-        Membership owner = theOwner.membership();
-        UUID itineraryId = owner.itineraryId();
-        if (owner.travelerId().equals(targetTravelerId)) {
+    public void offerOwnership(Owner owner, UUID targetTravelerId) {
+        Membership member = owner.membership();
+        UUID itineraryId = member.itineraryId();
+        if (member.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
         }
         if (workspaces.roleOf(itineraryId, targetTravelerId).isEmpty()) {
@@ -212,21 +212,21 @@ public class MembershipService {
 
         OwnershipOffer offer =
                 offers.save(
-                        OwnershipOffer.open(workspaceId, targetTravelerId, owner.travelerId(), Instant.now()));
+                        OwnershipOffer.open(workspaceId, targetTravelerId, member.travelerId(), Instant.now()));
         log.info(
                 "Ownership offered: itineraryId={} offerId={} to={} by={}",
                 itineraryId,
                 offer.id(),
                 targetTravelerId,
-                owner.travelerId());
-        emitAfterCommit("ownership_offer_created", itineraryId, targetTravelerId, owner.travelerId());
+                member.travelerId());
+        emitAfterCommit("ownership_offer_created", itineraryId, targetTravelerId, member.travelerId());
     }
 
 
     @Transactional
-    public void revokeOwnershipOffer(Owner theOwner) {
-        Membership owner = theOwner.membership();
-        UUID itineraryId = owner.itineraryId();
+    public void revokeOwnershipOffer(Owner owner) {
+        Membership member = owner.membership();
+        UUID itineraryId = member.itineraryId();
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);
         if (pending.isEmpty()) {
@@ -236,7 +236,7 @@ public class MembershipService {
         offer.revoke(Instant.now());
         offers.saveAndFlush(offer);
         log.info("Ownership offer revoked: itineraryId={} offerId={}", itineraryId, offer.id());
-        emitAfterCommit("ownership_offer_revoked", itineraryId, offer.targetTravelerId(), owner.travelerId());
+        emitAfterCommit("ownership_offer_revoked", itineraryId, offer.targetTravelerId(), member.travelerId());
     }
 
 
