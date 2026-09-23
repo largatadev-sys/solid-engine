@@ -17,6 +17,8 @@ _Derived from Artifact 00 and the working sessions. Status: **proposed — pendi
 
 Criteria content (metric, tiers, floor, EOI-gate) → **COO drafts, all founders ratify, signed before alpha launches** (register #1). Fundraising success is a business milestone, **not** a validation signal.
 
+> **Amended 2026-09-23 — founder-ruled at the register #1 session (record: `docs/plans/R1-validation-criteria/grilling.md`).** The three tiers above are retired: the app is already in alpha and builds at full speed, and no read date, floor or threshold exists. What replaces them is the **alpha dashboard** — the number list in `00` §Success, built in worklog — read by the founder whenever they choose. **"Post-validation", wherever this package says it, now means "after the founder reads the dashboard and calls it": no fixed date, no threshold.** The build rule ("Product") is unchanged. Epic 7's trigger is a founder pull.
+
 ---
 
 ## Hypothesis

@@ -123,6 +123,12 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 
 *One entry per change, oldest first. Prose, not a table: these entries run to thousands of characters and a three-column cell renders them as an unreadable column of text.*
 
+**2026-09-23**
+
+Register #1 resolved — the validation gate retired and the alpha dashboard's number list signed; off-epic, docs only, at the founder's call. It began as a request for an admin dashboard (unique users, screen time, users joined, trips created, itineraries published, diaries and postcards posted) and ended in three rulings: the dashboard lives in **worklog** on the FB-1 relay pattern through a new intake endpoint, never in the app; the app is already in alpha at full speed, so no number on any date decides between the July tiers; and the list worklog builds against is now `00` §Success — nine rows, onboarded travelers only, the test pool and seeded demo travelers excluded at the source, one share (of travelers onboarded each week, those in a group trip within 14 days) above the counts. Screen time deferred to a founder pull; expression of interest turned out to be a feature and moved to the backlog undefined; the founder signs alone under the other founders' standing delegation. `01` §Build mode now defines "post-validation" as "after the founder reads the dashboard and calls it", so the 24 triggers that use the phrase stay as written and Epic 7 opens on a founder pull. The pipeline that feeds the dashboard is a new epic-map line, **AN-1** (worklog's intake, store and dashboard first, then our outbox, batching relay, test-account marker and `POST /v1/events`), pulled when the founder says. Record: `docs/plans/R1-validation-criteria/grilling.md`.
+
+*Why it wasn't a story —* a founder decision written into canon: no code, no wire, no schema. The two stories it minted — worklog's and AN-1 — are grilled when pulled.
+
 **2026-09-18**
 
 The `implement` skill (both copies, `.agents/skills/` and `.claude/skills/`) gains one clause — *run the full test suite once at the end* — beside the existing *typechecking regularly, single test files regularly*. Found uncommitted in the shared checkout at TW-2's session start; committed at the founder's instruction as its own commit on TW-2's branch, on the 2026-08-28 skills-sync precedent, so it reaches `dev` with that PR rather than sitting under a `docs(trip)` heading.
@@ -594,8 +600,8 @@ The ten modules on the pre-CM-2 flat shape took ADR-038's layout, one module per
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
-- Register #1 validation criteria — COO drafts, founders ratify, **signed before alpha**.
-- Register #2 analytics events — COO; default set instruments from S0.3 onward. Sink = structured log line during the build; **goes durable before alpha** (with reg. #1).
+- Register #1 validation criteria — **RESOLVED 2026-09-23**: the gate retired, the alpha dashboard's number list signed by the founder (`00` §Success; record `docs/plans/R1-validation-criteria/grilling.md`).
+- Register #2 analytics events — COO; default set instruments from S0.3 onward. Sink = structured log line during the build; **goes durable before alpha** (with reg. #1). *(Sink decided 2026-09-23 with reg. #1: a Postgres outbox relayed to worklog — the epic map's AN-1 line.)*
 - Register #14 free/paid split + pricing — founders; **before Epic 7 starts**. **The entitlement seam (S1.8) ships at this decision moment** — born wired to the first gated capabilities (parked out of E1 2026-07-28; ADR-009 amendment carries the candidate map).
 - Domain registration — **resolved: `largata.com` purchased 2026-07-16**; wiring lands in S0.4. The `applicationId` permanence moment travels with the first Play upload (parked Play-track story, epic-map backlog).
 - Play developer account creation — **trigger re-pinned 2026-07-29: once E2+E3+E4 ship** (founder-deferred from ~E4 start at the reorder grilling; verification must still complete before the Play internal-track story, pre-alpha). No Apple account until the iOS activation (ADR-010).

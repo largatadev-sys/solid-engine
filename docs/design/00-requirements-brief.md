@@ -125,14 +125,16 @@ _Transcribed from the founder discussion (largata.docx, 09/07/2026, as revised a
 
 **Validation criteria → the validation gate (playbook §6).** Tiered by founder decision — Tier 1 validated (full speed) · Tier 2 pivot trigger (the approach changes) · Tier 3 hard pause (feature development stops pending founder diagnosis — a forced decision point, not burial). Deliberately open at transcription time: the COO drafts the metric, thresholds, floor, and the EOI-gate decision; all founders ratify. **Hard deadline: signed before alpha launches.** Registered as open item #1. Engineering strawman on the table for him to react against: primary metric = % of registered users who create/join a Trip Workspace with ≥2 members within 14 days; judge at +12 weeks; ≥40% = validated, <40% = pivot trigger, <15% = hard pause; floor 500 registered users = inconclusive (extend or re-recruit); fundraising success is a business milestone, **not** a validation signal.
 
+> **Amended 2026-09-23 — register #1 resolved, founder-ruled (record: `docs/plans/R1-validation-criteria/grilling.md`).** The gate is retired: the app is already in alpha at full speed, and no number on any date decides between the tiers above. Register #1 resolves instead as **the alpha dashboard's number list**, built in worklog on the FB-1 relay pattern through a new intake endpoint, never in the app: travelers onboarded (per day, per week, total) · unique travelers active (per day, per week) · travelers online now (live) · trips created (per day, per week, total) · trips with two or more members (per week, total) · itineraries published (per week, total) · diaries created (per week, total) · postcards posted (per day, per week, total) · and one share above the counts — **of travelers onboarded each week, those in a trip with two or more members within 14 days**, the strawman's metric surviving without its thresholds, because every other row rises whenever more people sign up and that one rises only when groups form. **Who counts: onboarded travelers only**, with the test pool and the seeded demo travelers excluded at the source so a walk never reads as usage. Screen time is deferred to a founder pull. Costs are unmeasurable until E5 exists, so the list measures plan and record. The EOI-gate item turned out to be a *feature*, not a criterion, and moved to the epic-map backlog undefined. Signed by the founder alone under the other founders' standing delegation; "COO drafts" no longer applies. The pipeline that feeds the dashboard is the epic map's **AN-1** line, the second cross-repo pipeline with worklog.
+
 ---
 
 ## Open-questions register
 
 | # | Item | Owner | Deadline |
 |---|------|-------|----------|
-| 1 | Validation criteria: metric, tiers, floor, EOI-as-gate | COO drafts, founders ratify | **Before alpha launch** |
-| 2 | Analytics event wishlist (instrumentation) | COO | **Before first story ships** (default set applies if late: signup, workspace created, invite sent/accepted, item added, vote cast, publish, fork) |
+| 1 | ~~Validation criteria: metric, tiers, floor, EOI-as-gate~~ — **RESOLVED 2026-09-23**: the gate retired, the alpha dashboard's number list signed (§Success amendment; record `docs/plans/R1-validation-criteria/grilling.md`) | founder, standing delegation | — |
+| 2 | Analytics event wishlist (instrumentation) *(amended 2026-09-23: the wishlist is the R1 dashboard list in §Success; the sink goes durable in the epic map's AN-1 line — a Postgres outbox relayed to worklog)* | COO | **Before first story ships** (default set applies if late: signup, workspace created, invite sent/accepted, item added, vote cast, publish, fork) |
 | 3 | Glossary nouns confirmed canonical | UX engineer | Before Artifact 02 finalizes |
 | 4 | Review rules: who can review, how many, editable? | UX engineer + CTO | Artifact 02 |
 | 5 | Comment/interaction surface details on public itineraries | UX engineer + CTO | Artifact 02 |
@@ -168,4 +170,4 @@ _Transcribed from the founder discussion (largata.docx, 09/07/2026, as revised a
 | Edward Allan | | _pending_ |
 | CJ Marsada | | _pending_ |
 
-**We agree the above represents what we are building. The worth-continuing agreement (validation criteria) is committed separately at the validation gate before alpha launch.**
+**We agree the above represents what we are building. The worth-continuing agreement (validation criteria) is committed separately at the validation gate before alpha launch.** *(Amended 2026-09-23: the validation gate is retired — register #1's resolution is in §Success; no worth-continuing agreement is pending.)*
